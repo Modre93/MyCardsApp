@@ -17,7 +17,7 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import Spinner from "react-native-loading-spinner-overlay";
 import { getSchools } from "@/utils/schools";
-import { SelectList } from "react-native-dropdown-select-list";
+import { SelectList } from "@/react-native-dropdown-select-list";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
 import { grades } from "@/assets/images/data/grades";
@@ -33,8 +33,8 @@ const list = () => {
   const { user, sID } = useAuth();
   const [nom, setNom] = useState<string | undefined>(undefined);
   const [prenom, setPrenom] = useState<string | undefined>(undefined);
-  const [grade, setGrade] = useState<string | undefined>(undefined);
-  const [sexe, setSexe] = useState<string | undefined>(undefined);
+  const [grade, setGrade] = useState<string | null>(null);
+  const [sexe, setSexe] = useState<string | null>(null);
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset>();
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [lieuDeNaissance, setLieuDeNaissance] = useState<string | undefined>(
@@ -43,13 +43,14 @@ const list = () => {
   const [personneAContacter, setPersonneAContacter] = useState<
     string | undefined
   >(undefined);
-  const [numero, setNumero] = useState<string | undefined>(undefined);
+  const [numero, setNumero] = useState<string>("");
   const [schoolID, setSchoolID] = useState<string>("");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [schools, setSchools] = useState<School[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
+  const [resetSelectList, setResetSelectList] = useState<boolean>(false);
 
   useEffect(() => {
     if (!user && !sID) return;
@@ -81,16 +82,20 @@ const list = () => {
 
   const reset = () => {
     setNom("");
-    setGrade("");
-    setSexe("");
+    setPrenom("");
+    setGrade(null);
+    setSexe(null);
     setPhoto(undefined);
     setDate(undefined);
     setLieuDeNaissance("");
     setPersonneAContacter("");
     setNumero("");
+    setResetSelectList(true);
   };
 
   const onSubmmitStudent = async () => {
+    const regExp = /^\d{8}$/;
+    const num = numero.replace(/\s/g, "");
     if (!photo) {
       alert("Please select an image.");
       return;
@@ -99,7 +104,13 @@ const list = () => {
       alert("Please enter a nom.");
       return;
     }
-    console.log(sID);
+
+    if (!regExp.test(num)) {
+      alert(
+        `Numero de telephone ${numero} invalide. Veuillez entrer un numero de telephone burkinabè sans indicatif.`
+      );
+      return;
+    }
     setLoading(true);
     const base64 = await FileSystem.readAsStringAsync(photo!.uri, {
       encoding: "base64",
@@ -124,8 +135,8 @@ const list = () => {
         photo: filePath,
         date_de_naissance: date,
         lieu_de_naissance: lieuDeNaissance,
-        turteur: personneAContacter,
-        contact_du_tuteur: numero,
+        tuteur: personneAContacter,
+        contact_du_tuteur: num,
         school: isAdmin ? schoolID : isStudent ? sID : user!.id,
       });
       if (error) {
@@ -158,16 +169,7 @@ const list = () => {
   };
 
   const onNumberChange = (text: string) => {
-    const regExp = /^\d{8}$/;
-    const number = text.replace(/\s/g, "");
-    if (regExp.test(number)) {
-      setNumero(text);
-    } else {
-      setNumero("");
-      alert(
-        "Numero de telephone invalide. Veuillez entrer un numero de telephone burkinabè sans indicatif."
-      );
-    }
+    setNumero(text);
   };
 
   return (
@@ -197,12 +199,14 @@ const list = () => {
             return { key: i, value: g };
           })}
           setSelected={setGrade}
+          search={false}
           save="value"
           placeholder="Classe"
           boxStyles={styles.inputField}
           dropdownTextStyles={{ color: "#fff" }}
           dropdownStyles={styles.dropDown}
-          inputStyles={{ color: "#fff" }}
+          inputStyles={grade ? { color: "#fff" } : { color: "#181818" }}
+          reset={resetSelectList}
         />
         <SelectList
           data={[
@@ -210,11 +214,14 @@ const list = () => {
             { key: 2, value: "M" },
           ]}
           setSelected={setSexe}
+          search={false}
           save="value"
           placeholder="Sexe"
           boxStyles={styles.inputField}
           dropdownTextStyles={{ color: "#fff" }}
           dropdownStyles={styles.dropDown}
+          inputStyles={sexe ? { color: "#fff" } : { color: "#181818" }}
+          reset={resetSelectList}
         />
         <TextInput
           placeholder="Date de naissance"
@@ -236,10 +243,10 @@ const list = () => {
         />
         <TextInput
           placeholder="Numero de telephone du tuteur"
-          value={numero}
-          onEndEditing={(e) => onNumberChange(e.nativeEvent.text)}
+          value={numero.replace(/(\d{2})(?=\d)/g, "$1 ")}
+          onChangeText={onNumberChange}
           style={styles.inputField}
-          keyboardType="phone-pad"
+          keyboardType="number-pad"
         />
         {isAdmin && (
           <SelectList
@@ -252,6 +259,8 @@ const list = () => {
             boxStyles={styles.inputField}
             dropdownTextStyles={{ color: "#fff" }}
             dropdownStyles={styles.dropDown}
+            inputStyles={schoolID ? { color: "#fff" } : { color: "#181818" }}
+            reset={resetSelectList}
           />
         )}
         <TouchableOpacity onPress={onSubmmitStudent} style={styles.button}>
@@ -304,6 +313,7 @@ const styles = StyleSheet.create({
     padding: 10,
     color: "#fff",
     backgroundColor: "#363636",
+    paddingLeft: 20,
   },
   dropDown: {
     backgroundColor: "#363636",

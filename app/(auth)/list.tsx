@@ -13,7 +13,7 @@ import { supabase } from "../../utils/supabase";
 import StudentItem from "../../components/StudentItem";
 import { useRouter } from "expo-router";
 import Spinner from "react-native-loading-spinner-overlay";
-import { SelectList } from "react-native-dropdown-select-list";
+import { SelectList } from "@/react-native-dropdown-select-list";
 import { grades } from "@/assets/images/data/grades";
 import { generateExcel } from "../../utils/download";
 
@@ -135,6 +135,8 @@ const list = () => {
     setFilteredStudents(students.filter((item) => item.grade === selected));
   };
 
+  const selectListReset = (func: () => void) => func;
+
   return (
     <View style={styles.container}>
       <Spinner visible={loading} />
@@ -147,6 +149,7 @@ const list = () => {
         dropdownTextStyles={{ color: "#fff" }}
         dropdownStyles={styles.dropBox}
         boxStyles={styles.searchField}
+        reset={false}
       />
       <ScrollView>
         {selected !== "" ? (

@@ -17,6 +17,7 @@
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native-community/datetimepicker": "8.2.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
     "@supabase/supabase-js": "^2.48.1",
@@ -45,7 +46,6 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-native": "0.76.7",
-    "react-native-dropdown-select-list": "^2.0.5",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-loading-spinner-overlay": "^3.0.1",
     "react-native-reanimated": "~3.16.1",
@@ -54,8 +54,7 @@
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
-    "xlsx": "^0.18.5",
-    "@react-native-community/datetimepicker": "8.2.0"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
