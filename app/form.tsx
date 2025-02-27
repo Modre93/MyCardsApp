@@ -5,6 +5,8 @@ import {
   ScrollView,
   TextInput,
   Pressable,
+  Modal,
+  Text,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -51,6 +53,9 @@ const list = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
   const [resetSelectList, setResetSelectList] = useState<boolean>(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [photomodalVisible, setPhotomodalVisible] = useState(false);
+  const [status, requestPermission] = ImagePicker.useCameraPermissions();
 
   useEffect(() => {
     if (!user && !sID) return;
@@ -66,9 +71,15 @@ const list = () => {
     }
   }, [user]);
 
-  const onSelectImage = async () => {
+  const onPickImage = () => {
+    setPhotomodalVisible(true);
+  };
+
+  const selectPhoto = async () => {
+    if (!status?.granted) requestPermission();
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
+      aspect: [3, 4],
       allowsEditing: true,
       quality: 1,
     });
@@ -78,6 +89,23 @@ const list = () => {
     } else {
       alert("You did not select any image.");
     }
+    setPhotomodalVisible(false);
+  };
+
+  const takePhoto = async () => {
+    if (!status?.granted) requestPermission();
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images"],
+      aspect: [3, 4],
+      allowsEditing: true,
+      quality: 1,
+    });
+    if (!result.canceled) {
+      setPhoto(result.assets[0]);
+    } else {
+      alert("You did not take any photo.");
+    }
+    setPhotomodalVisible(false);
   };
 
   const reset = () => {
@@ -93,7 +121,8 @@ const list = () => {
     setResetSelectList(true);
   };
 
-  const onSubmmitStudent = async () => {
+  const onConfirmSubmit = async () => {
+    setModalVisible(false);
     const regExp = /^\d{8}$/;
     const num = numero.replace(/\s/g, "");
     if (!photo) {
@@ -135,7 +164,6 @@ const list = () => {
         photo: filePath,
         date_de_naissance: date,
         lieu_de_naissance: lieuDeNaissance,
-        tuteur: personneAContacter,
         contact_du_tuteur: num,
         school: isAdmin ? schoolID : isStudent ? sID : user!.id,
       });
@@ -148,6 +176,10 @@ const list = () => {
     }
     setLoading(false);
     if (!isStudent) router.replace("/list");
+  };
+
+  const onSubmmitStudent = () => {
+    setModalVisible(true);
   };
 
   const onChange = (event: any, selectedDate: any) => {
@@ -176,7 +208,7 @@ const list = () => {
     <View style={styles.container}>
       <Spinner visible={loading} />
       <ScrollView>
-        <Pressable onPress={onSelectImage}>
+        <Pressable onPress={onPickImage}>
           <Image
             source={photo ? photo.uri : placeholderImage}
             style={styles.image}
@@ -203,9 +235,9 @@ const list = () => {
           save="value"
           placeholder="Classe"
           boxStyles={styles.inputField}
-          dropdownTextStyles={{ color: "#fff" }}
+          dropdownTextStyles={{ color: "#000" }}
           dropdownStyles={styles.dropDown}
-          inputStyles={grade ? { color: "#fff" } : { color: "#181818" }}
+          inputStyles={grade ? { color: "#000" } : { color: "#656565" }}
           reset={resetSelectList}
         />
         <SelectList
@@ -218,9 +250,9 @@ const list = () => {
           save="value"
           placeholder="Sexe"
           boxStyles={styles.inputField}
-          dropdownTextStyles={{ color: "#fff" }}
+          dropdownTextStyles={{ color: "#000" }}
           dropdownStyles={styles.dropDown}
-          inputStyles={sexe ? { color: "#fff" } : { color: "#181818" }}
+          inputStyles={sexe ? { color: "#000" } : { color: "#656565" }}
           reset={resetSelectList}
         />
         <TextInput
@@ -242,7 +274,7 @@ const list = () => {
           style={styles.inputField}
         />
         <TextInput
-          placeholder="Numero de telephone du tuteur"
+          placeholder="Contact du tuteur"
           value={numero.replace(/(\d{2})(?=\d)/g, "$1 ")}
           onChangeText={onNumberChange}
           style={styles.inputField}
@@ -257,9 +289,9 @@ const list = () => {
             save="key"
             placeholder="Choisir un etablissement"
             boxStyles={styles.inputField}
-            dropdownTextStyles={{ color: "#fff" }}
+            dropdownTextStyles={{ color: "#000" }}
             dropdownStyles={styles.dropDown}
-            inputStyles={schoolID ? { color: "#fff" } : { color: "#181818" }}
+            inputStyles={schoolID ? { color: "#000" } : { color: "#656565" }}
             reset={resetSelectList}
           />
         )}
@@ -267,10 +299,88 @@ const list = () => {
           <Ionicons name="send" size={30} color={"#fff"} />
         </TouchableOpacity>
         {/* FAB to add images */}
-        <TouchableOpacity onPress={onSelectImage} style={styles.fab}>
+        <TouchableOpacity onPress={onPickImage} style={styles.fab}>
           <Ionicons name="camera-outline" size={20} color={"#fff"} />
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Confirmation Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Confirmez vos informations</Text>
+            <Text style={styles.modalText}>Nom: {nom}</Text>
+            <Text style={styles.modalText}>Prenom: {prenom}</Text>
+            <Text style={styles.modalText}>Grade: {grade}</Text>
+            <Text style={styles.modalText}>Sexe: {sexe}</Text>
+            <Text style={styles.modalText}>
+              Date de naissance: {date ? date.toDateString() : ""}
+            </Text>
+            <Text style={styles.modalText}>
+              Lieu de naissance: {lieuDeNaissance}
+            </Text>
+            <Text style={styles.modalText}>
+              Nom et prenom du tuteur: {personneAContacter}
+            </Text>
+            <Text style={styles.modalText}>Contact du tuteur: {numero}</Text>
+            {isAdmin && (
+              <Text style={styles.modalText}>
+                Etablissement:{" "}
+                {schools.find((school) => school.id === schoolID)?.name}
+              </Text>
+            )}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                onPress={onConfirmSubmit}
+                style={styles.modalButton}
+              >
+                <Text style={styles.modalButtonText}>Confirmer</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.modalButton}
+              >
+                <Text style={styles.modalButtonText}>Editer</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={photomodalVisible}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              onPress={selectPhoto}
+              style={{
+                flexDirection: "row",
+              }}
+            >
+              <Ionicons name="image" size={30} color={"#4caf50"} />
+              <Text style={{ ...styles.modalTitle, color: "#4caf50" }}>
+                Choisir une photo
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={takePhoto}
+              style={{ flexDirection: "row" }}
+            >
+              <Ionicons name="camera" size={30} color={"#4caf50"} />
+              <Text style={{ ...styles.modalTitle, color: "#4caf50" }}>
+                Prendre une photo
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -279,7 +389,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#151515",
+    backgroundColor: "#f5f5f5",
+    marginTop: 50,
   },
   fab: {
     borderWidth: 1,
@@ -290,47 +401,84 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 60,
     right: 130,
-    backgroundColor: "#2b825b",
+    backgroundColor: "#4caf50",
     borderRadius: 100,
   },
   button: {
     marginVertical: 4,
     height: 50,
     borderWidth: 1,
-    borderColor: "#2b825b",
+    borderColor: "#4caf50",
     borderRadius: 4,
     padding: 10,
     color: "#fff",
-    backgroundColor: "#2b825b",
+    backgroundColor: "#4caf50",
     alignItems: "center",
   },
   inputField: {
     marginVertical: 4,
     height: 50,
     borderWidth: 1,
-    borderColor: "#2b825b",
+    borderColor: "#4caf50",
     borderRadius: 4,
     padding: 10,
-    color: "#fff",
-    backgroundColor: "#363636",
+    color: "#000",
+    backgroundColor: "#ffffff",
     paddingLeft: 20,
   },
   dropDown: {
-    backgroundColor: "#363636",
+    backgroundColor: "#ffffff",
     position: "absolute",
     zIndex: 1,
     top: 50,
     width: "100%",
     borderWidth: 1,
-    borderColor: "#2b825b",
+    borderColor: "#4caf50",
   },
   image: {
     width: 100,
     height: 100,
     borderRadius: 50,
     alignSelf: "center",
-    borderColor: "#2b825b",
+    borderColor: "#4caf50",
     borderWidth: 1,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#ffffff",
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 5,
+    justifyContent: "flex-start",
+    alignSelf: "flex-start",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    marginTop: 20,
+  },
+  modalButton: {
+    marginHorizontal: 10,
+    padding: 10,
+    backgroundColor: "#4caf50",
+    borderRadius: 5,
+  },
+  modalButtonText: {
+    color: "#fff",
   },
 });
 

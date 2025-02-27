@@ -95,7 +95,7 @@ export default function Login() {
         <Text style={{ color: "#2b825b" }}>
           {!isStudent
             ? "Je suis élève/étudiant"
-            : "Se connecter en tant qu'ecole"}
+            : "Se connecter en tant qu'école"}
         </Text>
       </Pressable>
     </View>
@@ -107,28 +107,28 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 200,
     padding: 20,
-    backgroundColor: "#151515",
+    backgroundColor: "#f5f5f5",
   },
   header: {
     fontSize: 30,
     textAlign: "center",
     margin: 50,
-    color: "#fff",
+    color: "#000",
   },
   inputField: {
     marginVertical: 4,
     height: 50,
     borderWidth: 1,
-    borderColor: "#2b825b",
+    borderColor: "#4caf50",
     borderRadius: 4,
     padding: 10,
-    color: "#fff",
-    backgroundColor: "#363636",
+    color: "#000",
+    backgroundColor: "#ffffff",
   },
   button: {
     marginVertical: 15,
     alignItems: "center",
-    backgroundColor: "#2b825b",
+    backgroundColor: "#4caf50",
     padding: 12,
     borderRadius: 4,
   },

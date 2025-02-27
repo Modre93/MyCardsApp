@@ -12,9 +12,9 @@ const StackLayout = () => {
     <Stack
       screenOptions={{
         headerStyle: {
-          backgroundColor: "#0f0f0f",
+          backgroundColor: "#f5f5f5",
         },
-        headerTintColor: "#fff",
+        headerTintColor: "#000",
       }}
     >
       <Stack.Screen
@@ -23,7 +23,7 @@ const StackLayout = () => {
           headerTitle: "My Files",
           headerRight: () => (
             <TouchableOpacity onPress={signOut}>
-              <Ionicons name="log-out-outline" size={30} color={"#fff"} />
+              <Ionicons name="log-out-outline" size={30} color={"#000"} />
             </TouchableOpacity>
           ),
         }}

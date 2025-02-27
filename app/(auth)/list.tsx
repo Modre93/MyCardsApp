@@ -26,6 +26,9 @@ export type Student = {
   grade: string;
   sexe: string;
   photo: string;
+  date_de_naissance: string;
+  lieu_de_naissance: string;
+  contact_du_tuteur: string;
 };
 
 type SchoolData = {
@@ -69,7 +72,6 @@ const list = () => {
           sexe,
           date_de_naissance,
           lieu_de_naissance,
-          tuteur,
           contact_du_tuteur,
           photo`);
       if (data) {
@@ -88,7 +90,6 @@ const list = () => {
           sexe,
           date_de_naissance,
           lieu_de_naissance,
-          tuteur,
           contact_du_tuteur,
           photo`
         )
@@ -146,7 +147,7 @@ const list = () => {
         save="value"
         placeholder="Search"
         onSelect={onFilterChange}
-        dropdownTextStyles={{ color: "#fff" }}
+        dropdownTextStyles={{ color: "#000" }}
         dropdownStyles={styles.dropBox}
         boxStyles={styles.searchField}
         reset={false}
@@ -162,7 +163,7 @@ const list = () => {
               />
             ))
           ) : (
-            <Text style={styles.header}>No students found</Text>
+            <Text style={styles.header}>Aucun résultat trouvé</Text>
           )
         ) : (
           students.map((item, index) => (
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#151515",
+    backgroundColor: "#f5f5f5",
   },
   fab: {
     borderWidth: 1,
@@ -206,33 +207,33 @@ const styles = StyleSheet.create({
     bottom: 40,
     right: 30,
     height: 70,
-    backgroundColor: "#2b825b",
+    backgroundColor: "#4caf50",
     borderRadius: 100,
   },
   header: {
     fontSize: 30,
     textAlign: "center",
     margin: 50,
-    color: "#fff",
+    color: "#000",
   },
   searchField: {
     marginBottom: 20,
     height: 50,
     borderWidth: 1,
-    borderColor: "#2b825b",
+    borderColor: "#4caf50",
     borderRadius: 50,
     padding: 10,
-    color: "#fff",
-    backgroundColor: "#363636",
+    color: "#000",
+    backgroundColor: "#ffffff",
   },
   dropBox: {
-    backgroundColor: "#363636",
+    backgroundColor: "#ffffff",
     position: "absolute",
     zIndex: 1,
     top: 50,
     width: "100%",
     borderWidth: 1,
-    borderColor: "#2b825b",
+    borderColor: "#4caf50",
   },
 });
 

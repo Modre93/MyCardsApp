@@ -1,6 +1,18 @@
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "../provider/AuthProvider";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { View, Text } from "react-native";
+
+// Prevents the app from rendering until the auth state is initialized
+SplashScreen.preventAutoHideAsync();
+
+// Set the animation options. This is optional.
+SplashScreen.setOptions({
+  duration: 1000,
+  fade: true,
+});
 
 // Makes sure the user is authenticated before accessing protected pages
 const InitialLayout = () => {
@@ -26,7 +38,38 @@ const InitialLayout = () => {
     }
   }, [session, initialized]);
 
-  return <Slot />;
+  useEffect(() => {
+    async function prepare() {
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        SplashScreen.hideAsync();
+      }
+    }
+
+    prepare();
+  }, []);
+
+  return (
+    <>
+      <StatusBar style="dark" backgroundColor="#f5f5f5" />
+      <Slot />
+      <View
+        style={{
+          alignItems: "center",
+          padding: 10,
+          backgroundColor: "#f5f5f5",
+          flexDirection: "row",
+          justifyContent: "center",
+        }}
+      >
+        <Text style={{ color: "#888888", fontSize: 17 }}>©</Text>
+        <Text style={{ color: "#888888" }}> CleverTech</Text>
+      </View>
+    </>
+  );
 };
 
 // Wrap the app with the AuthProvider

@@ -26,45 +26,52 @@ const StudentItem = ({
     });
 
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        margin: 1,
-        alignItems: "center",
-        gap: 5,
-        backgroundColor: "#363636",
-        padding: 10,
-        borderRadius: 50,
-      }}
-    >
+    <View style={styles.container}>
       {image ? (
         <Image
           style={{ width: 80, height: 80, borderRadius: 50 }}
           source={{ uri: image }}
         />
       ) : (
-        <View style={{ width: 80, height: 80, backgroundColor: "#1A1A1A" }} />
+        <View style={{ width: 80, height: 80, backgroundColor: "#e0e0e0" }} />
       )}
       <View style={{ flex: 1, marginLeft: 10 }}>
         <Text style={styles.title}>{`${item.nom} ${item.prenom}`}</Text>
-        <Text style={{ flex: 1, color: "#fff" }}>Classe: {item.grade}</Text>
-        <Text style={{ flex: 1, color: "#fff" }}>Sexe: {item.sexe}</Text>
+        <Text style={{ flex: 1, color: "#000" }}>Classe: {item.grade}</Text>
+        <Text style={{ flex: 1, color: "#000" }}>Sexe: {item.sexe}</Text>
       </View>
       <TouchableOpacity onPress={() => {}} style={{ padding: 10 }}>
-        <Ionicons name="pencil" size={20} color={"#fff"} />
+        <Ionicons name="pencil" size={20} color={"#000"} />
       </TouchableOpacity>
       {/* Delete image button */}
       <TouchableOpacity onPress={onRemoveImage} style={{ padding: 10 }}>
-        <Ionicons name="trash-outline" size={20} color={"#fff"} />
+        <Ionicons name="trash-outline" size={20} color={"#000"} />
       </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    margin: 1,
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#ffffff",
+    padding: 10,
+    borderRadius: 50,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
   title: {
     fontSize: 20,
-    color: "#fff",
+    color: "#000",
   },
 });
 
