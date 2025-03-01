@@ -33,7 +33,7 @@ type School = {
 };
 
 const list = () => {
-  const { user, sID } = useAuth();
+  const { user, sID, signOut } = useAuth();
   const [nom, setNom] = useState<string | undefined>(undefined);
   const [prenom, setPrenom] = useState<string | undefined>(undefined);
   const [grade, setGrade] = useState<string | null>(null);
@@ -276,6 +276,11 @@ const list = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={signOut}>
+          <Ionicons name="log-out-outline" size={30} color="#000" />
+        </TouchableOpacity>
+      </View>
       <Spinner visible={loading} />
       <ScrollView>
         <Pressable onPress={onPickImage}>
@@ -461,6 +466,18 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#f5f5f5",
     marginTop: 50,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    justifyContent: "flex-end",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginLeft: 10,
+    color: "#000",
   },
   fab: {
     borderWidth: 1,

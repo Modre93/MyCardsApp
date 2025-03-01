@@ -30,13 +30,13 @@ const InitialLayout = () => {
       // Redirect authenticated users to the list page
       router.replace("/list");
     } else if (!session && sID) {
-      // Redirect unauthenticated users to the login page
+      // Redirect unauthenticated but  student users to the form page
       router.replace("/form");
     } else if (!session && !sID) {
-      // Redirect unauthenticated users to the login page
+      // Redirect unauthenticated and no student users to the login page
       router.replace("/");
     }
-  }, [session, initialized]);
+  }, [session, initialized, sID]);
 
   useEffect(() => {
     async function prepare() {

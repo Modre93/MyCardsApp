@@ -44,6 +44,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   // Log out the user
   const signOut = async () => {
     await supabase.auth.signOut();
+    setSID(null);
   };
 
   const value = {
