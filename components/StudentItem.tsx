@@ -3,6 +3,7 @@ import { supabase } from "../utils/supabase";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Student } from "../app/(auth)/list";
+import { useRouter } from "expo-router";
 
 // Image item component that displays the image from Supabase Storage and a delte button
 const StudentItem = ({
@@ -13,6 +14,7 @@ const StudentItem = ({
   onRemoveImage: () => void;
 }) => {
   const [image, setImage] = useState<string>("");
+  const router = useRouter();
 
   supabase.storage
     .from("files")
@@ -24,6 +26,13 @@ const StudentItem = ({
         setImage(fr.result as string);
       };
     });
+
+  const onEdit = () => {
+    router.push({
+      pathname: "/form",
+      params: { studentToEdit: JSON.stringify({ ...item }) },
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -40,7 +49,7 @@ const StudentItem = ({
         <Text style={{ flex: 1, color: "#000" }}>Classe: {item.grade}</Text>
         <Text style={{ flex: 1, color: "#000" }}>Sexe: {item.sexe}</Text>
       </View>
-      <TouchableOpacity onPress={() => {}} style={{ padding: 10 }}>
+      <TouchableOpacity onPress={onEdit} style={{ padding: 10 }}>
         <Ionicons name="pencil" size={20} color={"#000"} />
       </TouchableOpacity>
       {/* Delete image button */}

@@ -16,13 +16,14 @@ import * as FileSystem from "expo-file-system";
 import { decode } from "base64-arraybuffer";
 import { supabase, adminEmail } from "../utils/supabase";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import Spinner from "react-native-loading-spinner-overlay";
 import { getSchools } from "@/utils/schools";
 import { SelectList } from "@/react-native-dropdown-select-list";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
 import { grades } from "@/assets/images/data/grades";
+import { replace } from "expo-router/build/global-state/routing";
 const placeholderImage = require("@/assets/images/placeholder.png");
 
 type School = {
@@ -37,7 +38,7 @@ const list = () => {
   const [prenom, setPrenom] = useState<string | undefined>(undefined);
   const [grade, setGrade] = useState<string | null>(null);
   const [sexe, setSexe] = useState<string | null>(null);
-  const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset>();
+  const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | string>();
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [lieuDeNaissance, setLieuDeNaissance] = useState<string | undefined>(
     undefined
@@ -56,6 +57,7 @@ const list = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [photomodalVisible, setPhotomodalVisible] = useState(false);
   const [status, requestPermission] = ImagePicker.useCameraPermissions();
+  const { studentToEdit } = useLocalSearchParams();
 
   useEffect(() => {
     if (!user && !sID) return;
@@ -70,6 +72,32 @@ const list = () => {
       setIsStudent(true);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (studentToEdit && typeof studentToEdit === "string") {
+      const parsedStudentToEdit = JSON.parse(studentToEdit);
+      setNom(parsedStudentToEdit.nom);
+      setPrenom(parsedStudentToEdit.prenom);
+      setGrade(parsedStudentToEdit.grade);
+      setSexe(parsedStudentToEdit.sexe);
+      setDate(new Date(parsedStudentToEdit.date_de_naissance));
+      setLieuDeNaissance(parsedStudentToEdit.lieu_de_naissance);
+      setPersonneAContacter(parsedStudentToEdit.tuteur);
+      setNumero(parsedStudentToEdit.contact_du_tuteur);
+      setSchoolID(parsedStudentToEdit.school);
+
+      supabase.storage
+        .from("files")
+        .download(parsedStudentToEdit.photo)
+        .then(({ data }) => {
+          const fr = new FileReader();
+          fr.readAsDataURL(data!);
+          fr.onload = () => {
+            setPhoto(fr.result as string);
+          };
+        });
+    }
+  }, []);
 
   const onPickImage = () => {
     setPhotomodalVisible(true);
@@ -141,36 +169,78 @@ const list = () => {
       return;
     }
     setLoading(true);
-    const base64 = await FileSystem.readAsStringAsync(photo!.uri, {
-      encoding: "base64",
-    });
-    const filePath = `${
-      isAdmin ? schoolID : isStudent ? sID : user!.id
-    }/${new Date().getTime()}_${nom}.jpg`;
-    const contentType = "image/jpg";
-    const { data, error } = await supabase.storage
-      .from("files")
-      .upload(filePath, decode(base64), { contentType });
-    if (error) {
-      alert(`There was an error: ${error.message}`);
-      setLoading(false);
-      return;
-    } else {
-      const { error } = await supabase.from("students").insert({
-        nom: nom,
-        prenom: prenom,
-        grade: grade,
-        sexe: sexe,
-        photo: filePath,
-        date_de_naissance: date,
-        lieu_de_naissance: lieuDeNaissance,
-        contact_du_tuteur: num,
-        school: isAdmin ? schoolID : isStudent ? sID : user!.id,
+
+    // Normal data insertion
+    if (typeof photo !== "string" && !studentToEdit) {
+      const base64 = await FileSystem.readAsStringAsync(photo!.uri, {
+        encoding: "base64",
       });
+      const filePath = `${
+        isAdmin ? schoolID : isStudent ? sID : user!.id
+      }/${new Date().getTime()}_${nom}.jpg`;
+      const contentType = "image/jpg";
+      const { data, error } = await supabase.storage
+        .from("files")
+        .upload(filePath, decode(base64), { contentType });
       if (error) {
         alert(`There was an error: ${error.message}`);
+        setLoading(false);
+        return;
       } else {
-        alert("L'etudiant a ete ajoute avec succes");
+        const { error } = await supabase.from("students").insert({
+          nom: nom,
+          prenom: prenom,
+          grade: grade,
+          sexe: sexe,
+          photo: filePath,
+          date_de_naissance: date,
+          lieu_de_naissance: lieuDeNaissance,
+          contact_du_tuteur: num,
+          school: isAdmin ? schoolID : isStudent ? sID : user!.id,
+        });
+        if (error) {
+          alert(`There was an error: ${error.message}`);
+        } else {
+          alert("L'etudiant a ete ajoute avec succes");
+          reset();
+        }
+      }
+    } else if (studentToEdit && typeof studentToEdit === "string") {
+      // Update data of the student
+      if (typeof photo !== "string") {
+        const base64 = await FileSystem.readAsStringAsync(photo!.uri, {
+          encoding: "base64",
+        });
+        const filePath = JSON.parse(studentToEdit).photo;
+        const contentType = "image/jpg";
+        const { data, error } = await supabase.storage
+          .from("files")
+          .upload(filePath, decode(base64), { contentType, upsert: true });
+        if (error) {
+          alert(`There was an error: ${error.message}`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const { error } = await supabase
+        .from("students")
+        .update({
+          nom: nom,
+          prenom: prenom,
+          grade: grade,
+          sexe: sexe,
+          date_de_naissance: date,
+          lieu_de_naissance: lieuDeNaissance,
+          contact_du_tuteur: num,
+        })
+        .eq("studentID", JSON.parse(studentToEdit).studentID);
+
+      if (error) {
+        setLoading(false);
+        alert(`There was an error: ${error.message}`);
+      } else {
+        alert("L'etudiant a ete modifie avec succes");
         reset();
       }
     }
@@ -210,7 +280,13 @@ const list = () => {
       <ScrollView>
         <Pressable onPress={onPickImage}>
           <Image
-            source={photo ? photo.uri : placeholderImage}
+            source={
+              photo
+                ? typeof photo === "string"
+                  ? { uri: photo }
+                  : photo.uri
+                : placeholderImage
+            }
             style={styles.image}
           />
         </Pressable>
@@ -268,13 +344,7 @@ const list = () => {
           style={styles.inputField}
         />
         <TextInput
-          placeholder="Nom et prenom du tuteur"
-          value={personneAContacter}
-          onChangeText={setPersonneAContacter}
-          style={styles.inputField}
-        />
-        <TextInput
-          placeholder="Contact du tuteur"
+          placeholder="Contact en cas de besoin"
           value={numero.replace(/(\d{2})(?=\d)/g, "$1 ")}
           onChangeText={onNumberChange}
           style={styles.inputField}
@@ -364,8 +434,8 @@ const list = () => {
                 flexDirection: "row",
               }}
             >
-              <Ionicons name="image" size={30} color={"#4caf50"} />
-              <Text style={{ ...styles.modalTitle, color: "#4caf50" }}>
+              <Ionicons name="image" size={30} color={"#0091FF"} />
+              <Text style={{ ...styles.modalTitle, color: "#0091FF" }}>
                 Choisir une photo
               </Text>
             </TouchableOpacity>
@@ -373,8 +443,8 @@ const list = () => {
               onPress={takePhoto}
               style={{ flexDirection: "row" }}
             >
-              <Ionicons name="camera" size={30} color={"#4caf50"} />
-              <Text style={{ ...styles.modalTitle, color: "#4caf50" }}>
+              <Ionicons name="camera" size={30} color={"#0091FF"} />
+              <Text style={{ ...styles.modalTitle, color: "#0091FF" }}>
                 Prendre une photo
               </Text>
             </TouchableOpacity>
