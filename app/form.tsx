@@ -23,7 +23,6 @@ import { SelectList } from "@/react-native-dropdown-select-list";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
 import { grades } from "@/assets/images/data/grades";
-import { replace } from "expo-router/build/global-state/routing";
 const placeholderImage = require("@/assets/images/placeholder.png");
 
 type School = {
@@ -355,7 +354,7 @@ const list = () => {
           style={styles.inputField}
           keyboardType="number-pad"
         />
-        {isAdmin && (
+        {isAdmin && !studentToEdit && (
           <SelectList
             data={schools.map((school) => {
               return { key: school.id, value: school.name };
