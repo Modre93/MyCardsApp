@@ -16,6 +16,7 @@ import Spinner from "react-native-loading-spinner-overlay";
 import { SelectList } from "@/react-native-dropdown-select-list";
 import { grades } from "@/assets/images/data/grades";
 import { generateExcel } from "../../utils/download";
+import { getSchools } from "@/utils/schools";
 
 const adminEmail = "admin@admin.com";
 
@@ -29,9 +30,11 @@ export type Student = {
   date_de_naissance: string;
   lieu_de_naissance: string;
   contact_du_tuteur: string;
+  school: string;
 };
 
 type SchoolData = {
+  id: string;
   name: string;
   type: string;
 };
@@ -44,24 +47,27 @@ const list = () => {
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selected, setSelected] = useState<string>("");
-  const [schoolData, setSchoolData] = useState<SchoolData>({
-    name: "",
-    type: "",
-  });
+  const [schoolsData, setSchoolsData] = useState<SchoolData[]>([]);
 
   useEffect(() => {
     if (!user) return;
-    if (user.email === adminEmail) setIsAdmin(true);
-    getSchoolData();
+    if (user.email === adminEmail) {
+      setIsAdmin(true);
+      getSchools().then((data) => {
+        setSchoolsData(data!);
+      });
+    }
 
     // Load user images
     loadImages();
   }, [user]);
 
-  const data = grades.map((value, index) => ({
-    key: index,
-    value: value,
-  })); //grade[schoolData.type];
+  const data = isAdmin
+    ? schoolsData.map((school) => ({ key: school.id, value: school.name }))
+    : grades.map((value, index) => ({
+        key: index,
+        value: value,
+      })); //grade[schoolData.type];
 
   const getStudentData = async () => {
     if (user!.email === adminEmail) {
@@ -73,7 +79,7 @@ const list = () => {
           date_de_naissance,
           lieu_de_naissance,
           contact_du_tuteur,
-          photo`);
+          photo,school`);
       if (data) {
         setStudents(data);
       } else {
@@ -91,7 +97,7 @@ const list = () => {
           date_de_naissance,
           lieu_de_naissance,
           contact_du_tuteur,
-          photo`
+          photo,school`
         )
         .eq("school", user!.id);
       if (data) {
@@ -99,18 +105,6 @@ const list = () => {
       } else {
         console.log(error);
       }
-    }
-  };
-
-  const getSchoolData = async () => {
-    const { data, error } = await supabase
-      .from("etablissements")
-      .select("name, type")
-      .eq("id", user!.id);
-    if (data) {
-      setSchoolData(data[0]);
-    } else {
-      console.log(error);
     }
   };
 
@@ -133,10 +127,11 @@ const list = () => {
   };
 
   const onFilterChange = () => {
-    setFilteredStudents(students.filter((item) => item.grade === selected));
+    if (!isAdmin)
+      setFilteredStudents(students.filter((item) => item.grade === selected));
+    else
+      setFilteredStudents(students.filter((item) => item.school === selected));
   };
-
-  const selectListReset = (func: () => void) => func;
 
   return (
     <View style={styles.container}>
@@ -144,13 +139,14 @@ const list = () => {
       <SelectList
         data={data}
         setSelected={setSelected}
-        save="value"
+        save={`${isAdmin ? "key" : "value"}`}
         placeholder="Search"
         onSelect={onFilterChange}
         dropdownTextStyles={{ color: "#000" }}
         dropdownStyles={styles.dropBox}
         boxStyles={styles.searchField}
         reset={false}
+        search={true}
       />
       <ScrollView>
         {selected !== "" ? (
@@ -178,7 +174,11 @@ const list = () => {
       {/* FAB to download images */}
       {user?.email === adminEmail && (
         <TouchableOpacity
-          onPress={() => generateExcel(students)}
+          onPress={() =>
+            filteredStudents.length > 0
+              ? generateExcel(filteredStudents)
+              : alert("Veuillez choisir une école")
+          }
           style={{ ...styles.fab, bottom: 130, right: 30 }}
         >
           <Ionicons name="download-outline" size={30} color={"#fff"} />

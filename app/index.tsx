@@ -45,7 +45,7 @@ export default function Login() {
       .select("id, name, type")
       .eq("code", code);
     if (error) {
-      Alert.alert(error.message);
+      alert(error.message);
     } else {
       // Save the school ID
       if (setSID) setSID(data[0].id);
