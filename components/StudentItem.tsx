@@ -4,16 +4,22 @@ import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Student } from "../app/(auth)/list";
 import { useRouter } from "expo-router";
+import Checkbox from "expo-checkbox";
 
 // Image item component that displays the image from Supabase Storage and a delte button
 const StudentItem = ({
   item,
   onRemoveImage,
+  isAdmin,
+  onCkecked,
 }: {
   item: Student;
   onRemoveImage: () => void;
+  isAdmin: boolean;
+  onCkecked: (student: Student) => void;
 }) => {
   const [image, setImage] = useState<string>("");
+  const [isChecked, setIsChecked] = useState<boolean>(false);
   const router = useRouter();
 
   supabase.storage
@@ -34,8 +40,19 @@ const StudentItem = ({
     });
   };
 
+  const onCheck = () => {
+    setIsChecked(!isChecked);
+    onCkecked(item);
+  };
+
   return (
-    <View style={styles.container}>
+    <View
+      style={{
+        ...styles.container,
+        backgroundColor: isChecked ? "#e0e0e0" : "#ffffff",
+        borderBottomRightRadius: isAdmin ? 0 : 50,
+      }}
+    >
       {image ? (
         <Image
           style={{ width: 80, height: 80, borderRadius: 50 }}
@@ -49,13 +66,32 @@ const StudentItem = ({
         <Text style={{ flex: 1, color: "#000" }}>Classe: {item.grade}</Text>
         <Text style={{ flex: 1, color: "#000" }}>Sexe: {item.sexe}</Text>
       </View>
-      <TouchableOpacity onPress={onEdit} style={{ padding: 10 }}>
-        <Ionicons name="pencil" size={20} color={"#000"} />
-      </TouchableOpacity>
-      {/* Delete image button */}
-      <TouchableOpacity onPress={onRemoveImage} style={{ padding: 10 }}>
-        <Ionicons name="trash-outline" size={20} color={"#000"} />
-      </TouchableOpacity>
+      {/* View image button */}
+      <View>
+        <View style={{ flexDirection: "row" }}>
+          <TouchableOpacity onPress={() => {}} style={{ padding: 10 }}>
+            <Ionicons name="eye" size={20} color={"#000"} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onEdit} style={{ padding: 10 }}>
+            <Ionicons name="pencil" size={20} color={"#000"} />
+          </TouchableOpacity>
+          {/* Delete image button */}
+          <TouchableOpacity onPress={onRemoveImage} style={{ padding: 10 }}>
+            <Ionicons name="trash-outline" size={20} color={"#000"} />
+          </TouchableOpacity>
+        </View>
+        {isAdmin && (
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "flex-end",
+              marginRight: 10,
+            }}
+          >
+            <Checkbox value={isChecked} onValueChange={onCheck} />
+          </View>
+        )}
+      </View>
     </View>
   );
 };

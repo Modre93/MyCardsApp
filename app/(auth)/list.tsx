@@ -29,6 +29,7 @@ export type Student = {
   photo: string;
   date_de_naissance: string;
   lieu_de_naissance: string;
+  matricule: string;
   contact_du_tuteur: string;
   school: string;
 };
@@ -43,6 +44,7 @@ const list = () => {
   const { user } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [checkedStudents, setCheckedStudents] = useState<Student[]>([]);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -78,6 +80,7 @@ const list = () => {
           sexe,
           date_de_naissance,
           lieu_de_naissance,
+          matricule,
           contact_du_tuteur,
           photo,school`);
       if (data) {
@@ -96,6 +99,7 @@ const list = () => {
           sexe,
           date_de_naissance,
           lieu_de_naissance,
+          matricule,
           contact_du_tuteur,
           photo,school`
         )
@@ -133,6 +137,10 @@ const list = () => {
       setFilteredStudents(students.filter((item) => item.school === selected));
   };
 
+  const onChecked = (item: Student) => {
+    setCheckedStudents([...checkedStudents, item]);
+  };
+
   return (
     <View style={styles.container}>
       <Spinner visible={loading} />
@@ -156,6 +164,8 @@ const list = () => {
                 key={item.studentID}
                 item={item}
                 onRemoveImage={() => onRemoveStudent(item, index)}
+                isAdmin={isAdmin}
+                onCkecked={onChecked}
               />
             ))
           ) : (
@@ -167,6 +177,8 @@ const list = () => {
               key={item.studentID}
               item={item}
               onRemoveImage={() => onRemoveStudent(item, index)}
+              isAdmin={isAdmin}
+              onCkecked={onChecked}
             />
           ))
         )}
@@ -175,8 +187,16 @@ const list = () => {
       {user?.email === adminEmail && (
         <TouchableOpacity
           onPress={() =>
-            filteredStudents.length > 0
-              ? generateExcel(filteredStudents)
+            checkedStudents.length > 0
+              ? generateExcel(
+                  checkedStudents,
+                  schoolsData.find((s) => s.id === selected)!.name
+                )
+              : filteredStudents.length > 0
+              ? generateExcel(
+                  filteredStudents,
+                  schoolsData.find((s) => s.id === selected)!.name
+                )
               : alert("Veuillez choisir une école")
           }
           style={{ ...styles.fab, bottom: 130, right: 30 }}

@@ -3,7 +3,12 @@ import * as FileSystem from "expo-file-system";
 import { StorageAccessFramework } from "expo-file-system";
 import { supabase } from "./supabase";
 
-export const generateExcel = async (students: any) => {
+import { Student } from "@/app/(auth)/list";
+
+export const generateExcel = async (
+  students: Student[],
+  schoolName: string
+) => {
   try {
     const data = [
       [
@@ -14,7 +19,7 @@ export const generateExcel = async (students: any) => {
         "Sexe",
         "Date de naissance",
         "Lieu de naissance",
-        "Tuteur",
+        "Matricule",
         "Contact du tuteur",
         "Photo",
       ],
@@ -26,7 +31,7 @@ export const generateExcel = async (students: any) => {
         student.sexe,
         student.date_de_naissance,
         student.lieu_de_naissance,
-        student.tuteur,
+        student.matricule,
         student.contact_du_tuteur,
         student.photo,
       ]),
@@ -73,7 +78,7 @@ export const generateExcel = async (students: any) => {
     }
 
     // Define file name and create the file in Downloads
-    const fileName = `sample.xlsx`;
+    const fileName = `${schoolName}.xlsx`;
 
     const uri = await StorageAccessFramework.createFileAsync(
       downloadsUri.directoryUri,

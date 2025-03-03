@@ -37,6 +37,7 @@ const list = () => {
   const [prenom, setPrenom] = useState<string | undefined>(undefined);
   const [grade, setGrade] = useState<string | null>(null);
   const [sexe, setSexe] = useState<string | null>(null);
+  const [matricule, setMatricule] = useState<string | undefined>(undefined);
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | string>();
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [lieuDeNaissance, setLieuDeNaissance] = useState<string | undefined>(
@@ -114,7 +115,7 @@ const list = () => {
     if (!result.canceled) {
       setPhoto(result.assets[0]);
     } else {
-      alert("You did not select any image.");
+      alert("Vous n'avez pas choisi d'image.");
     }
     setPhotomodalVisible(false);
   };
@@ -130,7 +131,7 @@ const list = () => {
     if (!result.canceled) {
       setPhoto(result.assets[0]);
     } else {
-      alert("You did not take any photo.");
+      alert("Vous n'avez pas pris de photo.");
     }
     setPhotomodalVisible(false);
   };
@@ -146,6 +147,7 @@ const list = () => {
     setPersonneAContacter("");
     setNumero("");
     setResetSelectList(true);
+    setMatricule("");
   };
 
   const onConfirmSubmit = async () => {
@@ -153,11 +155,19 @@ const list = () => {
     const regExp = /^\d{8}$/;
     const num = numero.replace(/\s/g, "");
     if (!photo) {
-      alert("Please select an image.");
+      alert("Veuillez choisir une photo SVP.");
       return;
     }
-    if (!nom) {
-      alert("Please enter a nom.");
+    if (
+      !nom ||
+      !grade ||
+      !sexe ||
+      !date ||
+      !lieuDeNaissance ||
+      !num ||
+      !matricule
+    ) {
+      alert("Tous les champs sont obligatoires.");
       return;
     }
 
@@ -176,7 +186,7 @@ const list = () => {
       });
       const filePath = `${
         isAdmin ? schoolID : isStudent ? sID : user!.id
-      }/${new Date().getTime()}_${nom}.jpg`;
+      }/${new Date().getTime()}.jpg`;
       const contentType = "image/jpg";
       const { data, error } = await supabase.storage
         .from("files")
@@ -187,13 +197,14 @@ const list = () => {
         return;
       } else {
         const { error } = await supabase.from("students").insert({
-          nom: nom,
-          prenom: prenom,
+          nom: nom.trim(),
+          prenom: prenom?.trim(),
           grade: grade,
           sexe: sexe,
           photo: filePath,
           date_de_naissance: date,
-          lieu_de_naissance: lieuDeNaissance,
+          matricule: matricule?.trim(),
+          lieu_de_naissance: lieuDeNaissance?.trim(),
           contact_du_tuteur: num,
           school: isAdmin ? schoolID : isStudent ? sID : user!.id,
         });
@@ -225,12 +236,13 @@ const list = () => {
       const { error } = await supabase
         .from("students")
         .update({
-          nom: nom,
-          prenom: prenom,
+          nom: nom.trim(),
+          prenom: prenom?.trim(),
           grade: grade,
           sexe: sexe,
           date_de_naissance: date,
-          lieu_de_naissance: lieuDeNaissance,
+          matricule: matricule?.trim(),
+          lieu_de_naissance: lieuDeNaissance?.trim(),
           contact_du_tuteur: num,
         })
         .eq("studentID", JSON.parse(studentToEdit).studentID);
@@ -348,6 +360,12 @@ const list = () => {
           style={styles.inputField}
         />
         <TextInput
+          placeholder="Matricule"
+          value={matricule}
+          onChangeText={setMatricule}
+          style={styles.inputField}
+        />
+        <TextInput
           placeholder="Contact en cas de besoin"
           value={numero.replace(/(\d{2})(?=\d)/g, "$1 ")}
           onChangeText={onNumberChange}
@@ -369,7 +387,14 @@ const list = () => {
             reset={resetSelectList}
           />
         )}
-        <TouchableOpacity onPress={onSubmmitStudent} style={styles.button}>
+        <TouchableOpacity
+          onPress={onSubmmitStudent}
+          style={{
+            ...styles.button,
+            flexDirection: "row",
+            justifyContent: "center",
+          }}
+        >
           <Ionicons name="send" size={30} color={"#fff"} />
         </TouchableOpacity>
         {/* FAB to add images */}
@@ -398,9 +423,7 @@ const list = () => {
             <Text style={styles.modalText}>
               Lieu de naissance: {lieuDeNaissance}
             </Text>
-            <Text style={styles.modalText}>
-              Nom et prenom du tuteur: {personneAContacter}
-            </Text>
+            <Text style={styles.modalText}>Matricule: {matricule}</Text>
             <Text style={styles.modalText}>Contact du tuteur: {numero}</Text>
             {isAdmin && (
               <Text style={styles.modalText}>

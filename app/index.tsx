@@ -76,7 +76,7 @@ export default function Login() {
             style={styles.inputField}
           />
           <TextInput
-            placeholder="password"
+            placeholder="Mot de passe"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -89,7 +89,7 @@ export default function Login() {
         onPress={isStudent ? onSignAsStudentPress : onSignInPress}
         style={styles.button}
       >
-        <Text style={{ color: "#fff" }}>Sign in</Text>
+        <Text style={{ color: "#fff" }}>Se connecter</Text>
       </TouchableOpacity>
       <Pressable onPress={() => setIsStudent(!isStudent)}>
         <Text style={{ color: "#2b825b" }}>
