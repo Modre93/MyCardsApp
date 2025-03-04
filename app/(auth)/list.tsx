@@ -4,6 +4,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Text,
+  Modal,
+  Image,
 } from "react-native";
 import { useEffect, useState } from "react";
 import * as React from "react";
@@ -50,6 +52,12 @@ const list = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [selected, setSelected] = useState<string>("");
   const [schoolsData, setSchoolsData] = useState<SchoolData[]>([]);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewImage, setPreviewImage] = useState("");
+  const [previewStudent, setPreviewStudent] = useState<Student>();
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState<Student>();
+  const [studentToRemoveIndex, setStudentToRemoveIndex] = useState<number>();
 
   useEffect(() => {
     if (!user) return;
@@ -122,12 +130,19 @@ const list = () => {
     router.push("/form");
   };
 
+  const onRemoveStudentModal = (student: Student, listIndex: number) => {
+    setStudentToRemove(student);
+    setStudentToRemoveIndex(listIndex);
+    setDeleteModalVisible(true);
+  };
+
   const onRemoveStudent = async (item: Student, listIndex: number) => {
     await supabase.storage.from("files").remove([item.photo]);
     await supabase.from("students").delete().eq("photo", item.photo);
     const newStudents = [...students];
     newStudents.splice(listIndex, 1);
     setStudents(newStudents);
+    setDeleteModalVisible(false);
   };
 
   const onFilterChange = () => {
@@ -139,6 +154,23 @@ const list = () => {
 
   const onChecked = (item: Student) => {
     setCheckedStudents([...checkedStudents, item]);
+  };
+
+  const onPriewPressed = async (student: Student) => {
+    setLoading(true);
+    await supabase.storage
+      .from("files")
+      .download(student.photo)
+      .then(({ data }) => {
+        const fr = new FileReader();
+        fr.readAsDataURL(data!);
+        fr.onload = () => {
+          setPreviewImage(fr.result as string);
+        };
+      });
+    setPreviewStudent(student);
+    setLoading(false);
+    setPreviewVisible(true);
   };
 
   return (
@@ -163,9 +195,10 @@ const list = () => {
               <StudentItem
                 key={item.studentID}
                 item={item}
-                onRemoveImage={() => onRemoveStudent(item, index)}
+                onRemoveImage={() => onRemoveStudentModal(item, index)}
                 isAdmin={isAdmin}
                 onCkecked={onChecked}
+                preview={onPriewPressed}
               />
             ))
           ) : (
@@ -176,9 +209,10 @@ const list = () => {
             <StudentItem
               key={item.studentID}
               item={item}
-              onRemoveImage={() => onRemoveStudent(item, index)}
+              onRemoveImage={() => onRemoveStudentModal(item, index)}
               isAdmin={isAdmin}
               onCkecked={onChecked}
+              preview={onPriewPressed}
             />
           ))
         )}
@@ -208,6 +242,114 @@ const list = () => {
       <TouchableOpacity onPress={onAddStudent} style={styles.fab}>
         <Ionicons name="add" size={30} color={"#fff"} />
       </TouchableOpacity>
+      <Modal visible={previewVisible} transparent={true}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.8)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#fff",
+              paddingHorizontal: 10,
+              paddingVertical: 20,
+              borderRadius: 10,
+              width: "90%",
+            }}
+          >
+            <View style={{ alignItems: "center" }}>
+              <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
+                CARTE SCOLAIRE
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", flexDirection: "row" }}>
+              <Image
+                source={{ uri: previewImage }}
+                style={{ width: 100, height: 125, marginRight: 10 }}
+              />
+              <View>
+                <Text>Nom: {previewStudent?.nom.toLocaleUpperCase()} </Text>
+                <Text>Prénom(s): {previewStudent?.prenom} </Text>
+                <Text>Classe: {previewStudent?.grade}</Text>
+                <Text>sexe: {previewStudent?.sexe} </Text>
+                <Text>
+                  Né(e) le:{" "}
+                  {previewStudent?.date_de_naissance
+                    .split("-")
+                    .reverse()
+                    .join("/")}{" "}
+                  A {previewStudent?.lieu_de_naissance}
+                </Text>
+                <Text>matricule: {previewStudent?.matricule}</Text>
+                <Text>
+                  Contact en cas de besoin: {previewStudent?.contact_du_tuteur}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity onPress={() => setPreviewVisible(false)}>
+            <Ionicons name="close" size={30} color={"#fff"} />
+          </TouchableOpacity>
+        </View>
+      </Modal>
+      <Modal visible={deleteModalVisible} transparent={true}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.8)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#fff",
+              paddingHorizontal: 10,
+              paddingVertical: 20,
+              borderRadius: 10,
+              width: "70%",
+            }}
+          >
+            <Text>
+              Ce étudiant sera définitivement suprimé de la base de données.
+              Êtes-vous sûr de vouloir continuer?
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 15,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() =>
+                  onRemoveStudent(studentToRemove!, studentToRemoveIndex!)
+                }
+                style={{ padding: 10, backgroundColor: "red", borderRadius: 5 }}
+              >
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                  Supprimer
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setDeleteModalVisible(false)}
+                style={{
+                  padding: 10,
+                  backgroundColor: "green",
+                  borderRadius: 5,
+                }}
+              >
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                  Annuler
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

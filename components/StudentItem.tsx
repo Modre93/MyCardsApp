@@ -12,11 +12,13 @@ const StudentItem = ({
   onRemoveImage,
   isAdmin,
   onCkecked,
+  preview,
 }: {
   item: Student;
   onRemoveImage: () => void;
   isAdmin: boolean;
   onCkecked: (student: Student) => void;
+  preview: (student: Student) => void;
 }) => {
   const [image, setImage] = useState<string>("");
   const [isChecked, setIsChecked] = useState<boolean>(false);
@@ -69,7 +71,10 @@ const StudentItem = ({
       {/* View image button */}
       <View>
         <View style={{ flexDirection: "row" }}>
-          <TouchableOpacity onPress={() => {}} style={{ padding: 10 }}>
+          <TouchableOpacity
+            onPress={() => preview(item)}
+            style={{ padding: 10 }}
+          >
             <Ionicons name="eye" size={20} color={"#000"} />
           </TouchableOpacity>
           <TouchableOpacity onPress={onEdit} style={{ padding: 10 }}>
