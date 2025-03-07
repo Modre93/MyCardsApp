@@ -21,6 +21,7 @@ import Spinner from "react-native-loading-spinner-overlay";
 import { getSchools } from "@/utils/schools";
 import { SelectList } from "@/react-native-dropdown-select-list";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import Toast from "react-native-toast-message";
 
 import { grades } from "@/assets/images/data/grades";
 const placeholderImage = require("@/assets/images/placeholder.png");
@@ -43,9 +44,6 @@ const list = () => {
   const [lieuDeNaissance, setLieuDeNaissance] = useState<string | undefined>(
     undefined
   );
-  const [personneAContacter, setPersonneAContacter] = useState<
-    string | undefined
-  >(undefined);
   const [numero, setNumero] = useState<string>("");
   const [schoolID, setSchoolID] = useState<string>("");
   const router = useRouter();
@@ -82,7 +80,7 @@ const list = () => {
       setSexe(parsedStudentToEdit.sexe);
       setDate(new Date(parsedStudentToEdit.date_de_naissance));
       setLieuDeNaissance(parsedStudentToEdit.lieu_de_naissance);
-      setPersonneAContacter(parsedStudentToEdit.tuteur);
+      setMatricule(parsedStudentToEdit.matricule);
       setNumero(parsedStudentToEdit.contact_du_tuteur);
       setSchoolID(parsedStudentToEdit.school);
 
@@ -115,7 +113,11 @@ const list = () => {
     if (!result.canceled) {
       setPhoto(result.assets[0]);
     } else {
-      alert("Vous n'avez pas choisi d'image.");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Vous n'avez pas choisi de photo.",
+      });
     }
     setPhotomodalVisible(false);
   };
@@ -131,7 +133,11 @@ const list = () => {
     if (!result.canceled) {
       setPhoto(result.assets[0]);
     } else {
-      alert("Vous n'avez pas pris de photo.");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Vous n'avez pas pris de photo.",
+      });
     }
     setPhotomodalVisible(false);
   };
@@ -144,7 +150,6 @@ const list = () => {
     setPhoto(undefined);
     setDate(undefined);
     setLieuDeNaissance("");
-    setPersonneAContacter("");
     setNumero("");
     setResetSelectList(true);
     setMatricule("");
@@ -155,7 +160,11 @@ const list = () => {
     const regExp = /^\d{8}$/;
     const num = numero.replace(/\s/g, "");
     if (!photo) {
-      alert("Veuillez choisir une photo SVP.");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Veuillez choisir une photo.",
+      });
       return;
     }
     if (
@@ -167,14 +176,20 @@ const list = () => {
       !num ||
       !matricule
     ) {
-      alert("Tous les champs sont obligatoires.");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Veuillez remplir tous les champs.",
+      });
       return;
     }
 
     if (!regExp.test(num)) {
-      alert(
-        `Numero de telephone ${numero} invalide. Veuillez entrer un numero de telephone burkinabè sans indicatif.`
-      );
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Numero de telephone invalide.",
+      });
       return;
     }
     setLoading(true);
@@ -192,7 +207,12 @@ const list = () => {
         .from("files")
         .upload(filePath, decode(base64), { contentType });
       if (error) {
-        alert(`There was an error: ${error.message}`);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2:
+            "Il y a eu une erreur lors de l'envoi de la photo. Verifier votre connexion internet.",
+        });
         setLoading(false);
         return;
       } else {
@@ -209,9 +229,19 @@ const list = () => {
           school: isAdmin ? schoolID : isStudent ? sID : user!.id,
         });
         if (error) {
-          alert(`There was an error: ${error.message}`);
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2:
+              "Il y a eu une erreur lors de l'envoi des donnees. Verifier votre connexion internet.",
+          });
+          setLoading(false);
         } else {
-          alert("L'etudiant a ete ajoute avec succes");
+          Toast.show({
+            type: "success",
+            text1: "Succes",
+            text2: "L'étudiant a été ajoute avec succes.",
+          });
           reset();
         }
       }
@@ -227,7 +257,12 @@ const list = () => {
           .from("files")
           .upload(filePath, decode(base64), { contentType, upsert: true });
         if (error) {
-          alert(`There was an error: ${error.message}`);
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2:
+              "Il y a eu une erreur lors de l'envoi de la photo. Verifier votre connexion internet.",
+          });
           setLoading(false);
           return;
         }
@@ -249,9 +284,18 @@ const list = () => {
 
       if (error) {
         setLoading(false);
-        alert(`There was an error: ${error.message}`);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2:
+            "Il y a eu une erreur lors de la modification de l'étudiant. Verifier votre connexion internet.",
+        });
       } else {
-        alert("L'etudiant a ete modifie avec succes");
+        Toast.show({
+          type: "success",
+          text1: "Succes",
+          text2: "L'étudiant a été modifié avec succes.",
+        });
         reset();
       }
     }

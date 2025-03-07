@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "../provider/AuthProvider";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { View, Text } from "react-native";
+import Toast from "react-native-toast-message";
 
 // Prevents the app from rendering until the auth state is initialized
 SplashScreen.preventAutoHideAsync();
@@ -68,6 +69,7 @@ const InitialLayout = () => {
         <Text style={{ color: "#888888", fontSize: 17 }}>©</Text>
         <Text style={{ color: "#888888" }}> CleverTech</Text>
       </View>
+      <Toast />
     </>
   );
 };

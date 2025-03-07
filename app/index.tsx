@@ -14,6 +14,7 @@ import Spinner from "react-native-loading-spinner-overlay";
 import { supabase } from "../utils/supabase";
 import { useAuth } from "../provider/AuthProvider";
 import { useRouter } from "expo-router";
+import Toast from "react-native-toast-message";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -33,7 +34,12 @@ export default function Login() {
       password,
     });
 
-    if (error) Alert.alert(error.message);
+    if (error)
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Mauvais mot de pass ou E-mail.",
+      });
     setLoading(false);
   };
 
@@ -43,9 +49,14 @@ export default function Login() {
     const { data, error } = await supabase
       .from("etablissements")
       .select("id, name, type")
-      .eq("code", code);
-    if (error) {
-      alert(error.message);
+      .eq("code", code.toLocaleLowerCase());
+    if (error || data.length === 0) {
+      setLoading(false);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Code invalide.",
+      });
     } else {
       if (data[0].type === "association") {
         setPID!(data[0].id);
@@ -54,8 +65,8 @@ export default function Login() {
         setSID!(data[0].id);
         router.replace("/form");
       }
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

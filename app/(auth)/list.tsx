@@ -8,6 +8,7 @@ import {
   Image,
   Pressable,
   Switch,
+  Alert,
 } from "react-native";
 import { useEffect, useState } from "react";
 import * as React from "react";
@@ -27,6 +28,7 @@ import {
   getAllStudents,
 } from "@/utils/schools";
 import { getAllPros, getProsDataByAssociation } from "@/utils/associations";
+import Toast from "react-native-toast-message";
 
 const adminEmail = "admin@admin.com";
 
@@ -189,21 +191,56 @@ const list = () => {
   const onRemove = async (item: Student | Pro, listIndex: number) => {
     await supabase.storage.from("files").remove([item.photo]);
     if ("studentID" in item) {
-      await supabase.from("students").delete().eq("photo", item.photo);
+      const { error } = await supabase
+        .from("students")
+        .delete()
+        .eq("photo", item.photo);
+      if (error) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Une erreur s'est produite lors de la suppression",
+        });
+        setDeleteModalVisible(false);
+        return;
+      }
+      setDeleteModalVisible(false);
+      Toast.show({
+        type: "success",
+        text1: "Succès",
+        text2: "Étudiant supprimé avec succès",
+      });
       const newStudents = [...students];
       newStudents.splice(listIndex, 1);
       setStudents(newStudents);
       setStudentToRemove(undefined);
       setStudentToRemoveIndex(undefined);
     } else {
-      await supabase.from("professionals").delete().eq("photo", item.photo);
+      const { error } = await supabase
+        .from("professionals")
+        .delete()
+        .eq("photo", item.photo);
+      if (error) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Une erreur s'est produite lors de la suppression",
+        });
+        setDeleteModalVisible(false);
+        return;
+      }
+      setDeleteModalVisible(false);
+      Toast.show({
+        type: "success",
+        text1: "Succès",
+        text2: "Le membre supprimé avec succès",
+      });
       const newPros = [...pros];
       newPros.splice(listIndex, 1);
       setPros(newPros);
       setProToRemove(undefined);
       setProToRemoveIndex(undefined);
     }
-    setDeleteModalVisible(false);
   };
 
   const onFilterChange = () => {
@@ -245,19 +282,6 @@ const list = () => {
   const resetFunc = () => {
     setSelectlistReset(false);
   };
-
-  // onDownload = async () => {
-  //   if (checkedStudents.length > 0) {
-  //     generateExcel(checkedStudents, schoolsData.find((s) => s.id === selected)!.name);
-  //   } else if (filteredStudents.length > 0) {
-  //     generateExcel(filteredStudents, schoolsData.find((s) => s.id === selected)!.name);
-  //   } else if (checkedPros.length > 0) {
-  //     generateExcel(checkedPros, schoolsData.find((s) => s.id === selected)!.name);
-  //   }else if (filteredPros.length > 0) {
-  //     generateExcel(filteredPros, schoolsData.find((s) => s.id === selected)!.name);
-  //   } else {
-  //     alert("Veuillez choisir une école ou une association");
-  // };
 
   return (
     <View style={styles.container}>
@@ -358,26 +382,26 @@ const list = () => {
       {user?.email === adminEmail && (
         <TouchableOpacity
           onPress={() =>
-            checkedStudents.length > 0
-              ? generateExcel(
-                  checkedStudents,
-                  schoolsData.find((s) => s.id === selected)!.name
-                )
-              : filteredStudents.length > 0
-              ? generateExcel(
-                  filteredStudents,
-                  schoolsData.find((s) => s.id === selected)!.name
-                )
-              : checkedPros.length > 0
-              ? generateExcel(
-                  checkedPros,
-                  schoolsData.find((p) => p.id === selected)!.name
-                )
-              : filteredPros.length > 0
-              ? generateExcel(
-                  filteredPros,
-                  schoolsData.find((p) => p.id === selected)!.name
-                )
+            selected !== ""
+              ? checkedStudents.length > 0
+                ? generateExcel(
+                    checkedStudents,
+                    schoolsData.find((s) => s.id === selected)!.name
+                  )
+                : filteredStudents.length > 0
+                ? generateExcel(
+                    filteredStudents,
+                    schoolsData.find((s) => s.id === selected)!.name
+                  )
+                : checkedPros.length > 0
+                ? generateExcel(
+                    checkedPros,
+                    schoolsData.find((p) => p.id === selected)!.name
+                  )
+                : generateExcel(
+                    filteredPros,
+                    schoolsData.find((p) => p.id === selected)!.name
+                  )
               : alert("Veuillez choisir une école ou une association")
           }
           style={{ ...styles.fab, bottom: 130, right: 30 }}

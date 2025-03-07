@@ -20,9 +20,8 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import Spinner from "react-native-loading-spinner-overlay";
 import { getAssociations } from "@/utils/associations";
 import { SelectList } from "@/react-native-dropdown-select-list";
-import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import Toast from "react-native-toast-message";
 
-import { grades } from "@/assets/images/data/grades";
 const placeholderImage = require("@/assets/images/placeholder.png");
 
 type School = {
@@ -102,7 +101,11 @@ const list = () => {
     if (!result.canceled) {
       setPhoto(result.assets[0]);
     } else {
-      alert("Vous n'avez pas choisi d'image.");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Vous n'avez pas choisi de photo.",
+      });
     }
     setPhotomodalVisible(false);
   };
@@ -118,7 +121,11 @@ const list = () => {
     if (!result.canceled) {
       setPhoto(result.assets[0]);
     } else {
-      alert("Vous n'avez pas pris de photo.");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Vous n'avez pas pris de photo.",
+      });
     }
     setPhotomodalVisible(false);
   };
@@ -137,18 +144,28 @@ const list = () => {
     const regExp = /^\d{8}$/;
     const num = numero.replace(/\s/g, "");
     if (!photo) {
-      alert("Veuillez choisir une photo SVP.");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Veuillez choisir une photo.",
+      });
       return;
     }
     if (!nom || !num || !matricule) {
-      alert("Tous les champs sont obligatoires.");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Veuillez remplir tous les champs.",
+      });
       return;
     }
 
     if (!regExp.test(num)) {
-      alert(
-        `Numero de telephone ${numero} invalide. Veuillez entrer un numero de telephone burkinabè sans indicatif.`
-      );
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Numero invalide.",
+      });
       return;
     }
     setLoading(true);
@@ -166,7 +183,11 @@ const list = () => {
         .from("files")
         .upload(filePath, decode(base64), { contentType });
       if (error) {
-        alert(`There was an error: ${error.message}`);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Il y a eu une erreur.",
+        });
         setLoading(false);
         return;
       } else {
@@ -179,9 +200,18 @@ const list = () => {
           association: isAdmin ? associationID : isAPro ? pID : user!.id,
         });
         if (error) {
-          alert(`There was an error: ${error.message}`);
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Il y a eu une erreur.",
+          });
+          setLoading(false);
         } else {
-          alert("L'etudiant a ete ajoute avec succes");
+          Toast.show({
+            type: "success",
+            text1: "Success",
+            text2: "Le membre a été ajoute avec succes.",
+          });
           reset();
         }
       }
@@ -217,7 +247,11 @@ const list = () => {
         setLoading(false);
         alert(`There was an error: ${error.message}`);
       } else {
-        alert("L'etudiant a ete modifie avec succes");
+        Toast.show({
+          type: "success",
+          text1: "Success",
+          text2: "Le membre a été modifie avec succes.",
+        });
         reset();
       }
     }
