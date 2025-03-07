@@ -37,8 +37,8 @@ export default function Login() {
     if (error)
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: "Mauvais mot de pass ou E-mail.",
+        text1: "Erreur",
+        text2: "Mot de passe ou E-mail erroné.",
       });
     setLoading(false);
   };
@@ -54,7 +54,7 @@ export default function Login() {
       setLoading(false);
       Toast.show({
         type: "error",
-        text1: "Error",
+        text1: "Erreur",
         text2: "Code invalide.",
       });
     } else {
@@ -109,7 +109,7 @@ export default function Login() {
       <Pressable onPress={() => setIsStudent(!isStudent)}>
         <Text style={{ color: "#2b825b" }}>
           {!isStudent
-            ? "Je suis élève/étudiant"
+            ? "Je suis élève/Membre d'association/étudiant"
             : "Se connecter en tant qu'école"}
         </Text>
       </Pressable>

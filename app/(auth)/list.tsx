@@ -101,7 +101,11 @@ const list = () => {
         if (data) {
           setUserData(data);
         } else {
-          alert("Une erreur s'est produite");
+          Toast.show({
+            type: "error",
+            text1: "Erreur",
+            text2: "Une erreur s'est produite lors du chargement des données",
+          });
         }
       }
     };
@@ -198,7 +202,7 @@ const list = () => {
       if (error) {
         Toast.show({
           type: "error",
-          text1: "Error",
+          text1: "Erreur",
           text2: "Une erreur s'est produite lors de la suppression",
         });
         setDeleteModalVisible(false);
@@ -223,7 +227,7 @@ const list = () => {
       if (error) {
         Toast.show({
           type: "error",
-          text1: "Error",
+          text1: "Erreur",
           text2: "Une erreur s'est produite lors de la suppression",
         });
         setDeleteModalVisible(false);
@@ -402,7 +406,11 @@ const list = () => {
                     filteredPros,
                     schoolsData.find((p) => p.id === selected)!.name
                   )
-              : alert("Veuillez choisir une école ou une association")
+              : Toast.show({
+                  type: "error",
+                  text1: "Erreur",
+                  text2: "Veuillez sélectionner une école ou une association",
+                })
           }
           style={{ ...styles.fab, bottom: 130, right: 30 }}
         >

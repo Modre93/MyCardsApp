@@ -2,6 +2,7 @@ import * as XLSX from "xlsx";
 import * as FileSystem from "expo-file-system";
 import { StorageAccessFramework } from "expo-file-system";
 import { supabase } from "./supabase";
+import Toast from "react-native-toast-message";
 
 import { Student, Pro } from "@/app/(auth)/list";
 
@@ -62,7 +63,11 @@ export const generateExcel = async (
     const downloadsUri =
       await StorageAccessFramework.requestDirectoryPermissionsAsync();
     if (!downloadsUri.granted) {
-      console.log("Permission denied to access Downloads folder");
+      Toast.show({
+        type: "error",
+        text1: "Erreur",
+        text2: "Accès à ce dossier refusé",
+      });
       return;
     }
 
@@ -103,9 +108,16 @@ export const generateExcel = async (
     await StorageAccessFramework.writeAsStringAsync(uri, base64, {
       encoding: FileSystem.EncodingType.Base64,
     });
-
-    alert("Excel file saved to Downloads folder");
+    Toast.show({
+      type: "success",
+      text1: "Succès",
+      text2: "Téléchargement effectué avec succès",
+    });
   } catch (error) {
-    console.log("Error generating Excel file:", error);
+    Toast.show({
+      type: "error",
+      text1: "Erreur",
+      text2: "Une erreur s'est produite lors du téléchargement",
+    });
   }
 };

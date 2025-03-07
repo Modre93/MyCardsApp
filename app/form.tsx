@@ -115,7 +115,7 @@ const list = () => {
     } else {
       Toast.show({
         type: "error",
-        text1: "Error",
+        text1: "Erreur",
         text2: "Vous n'avez pas choisi de photo.",
       });
     }
@@ -135,7 +135,7 @@ const list = () => {
     } else {
       Toast.show({
         type: "error",
-        text1: "Error",
+        text1: "Erreur",
         text2: "Vous n'avez pas pris de photo.",
       });
     }
@@ -162,7 +162,7 @@ const list = () => {
     if (!photo) {
       Toast.show({
         type: "error",
-        text1: "Error",
+        text1: "Erreur",
         text2: "Veuillez choisir une photo.",
       });
       return;
@@ -178,7 +178,7 @@ const list = () => {
     ) {
       Toast.show({
         type: "error",
-        text1: "Error",
+        text1: "Erreur",
         text2: "Veuillez remplir tous les champs.",
       });
       return;
@@ -187,7 +187,7 @@ const list = () => {
     if (!regExp.test(num)) {
       Toast.show({
         type: "error",
-        text1: "Error",
+        text1: "Erreur",
         text2: "Numero de telephone invalide.",
       });
       return;
@@ -209,7 +209,7 @@ const list = () => {
       if (error) {
         Toast.show({
           type: "error",
-          text1: "Error",
+          text1: "Erreur",
           text2:
             "Il y a eu une erreur lors de l'envoi de la photo. Verifier votre connexion internet.",
         });
@@ -231,7 +231,7 @@ const list = () => {
         if (error) {
           Toast.show({
             type: "error",
-            text1: "Error",
+            text1: "Erreur",
             text2:
               "Il y a eu une erreur lors de l'envoi des donnees. Verifier votre connexion internet.",
           });
@@ -259,7 +259,7 @@ const list = () => {
         if (error) {
           Toast.show({
             type: "error",
-            text1: "Error",
+            text1: "Erreur",
             text2:
               "Il y a eu une erreur lors de l'envoi de la photo. Verifier votre connexion internet.",
           });
@@ -286,7 +286,7 @@ const list = () => {
         setLoading(false);
         Toast.show({
           type: "error",
-          text1: "Error",
+          text1: "Erreur",
           text2:
             "Il y a eu une erreur lors de la modification de l'étudiant. Verifier votre connexion internet.",
         });
