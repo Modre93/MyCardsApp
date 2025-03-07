@@ -3,39 +3,52 @@ import * as FileSystem from "expo-file-system";
 import { StorageAccessFramework } from "expo-file-system";
 import { supabase } from "./supabase";
 
-import { Student } from "@/app/(auth)/list";
+import { Student, Pro } from "@/app/(auth)/list";
 
 export const generateExcel = async (
-  students: Student[],
+  students: Student[] | Pro[],
   schoolName: string
 ) => {
   try {
-    const data = [
-      [
-        "id",
-        "Nom",
-        "Prenom",
-        "Grade",
-        "Sexe",
-        "Date de naissance",
-        "Lieu de naissance",
-        "Matricule",
-        "Contact du tuteur",
-        "Photo",
-      ],
-      ...students.map((student: any) => [
-        student.studentID,
-        student.nom,
-        student.prenom,
-        student.grade,
-        student.sexe,
-        student.date_de_naissance,
-        student.lieu_de_naissance,
-        student.matricule,
-        student.contact_du_tuteur,
-        student.photo,
-      ]),
-    ];
+    const data =
+      "studentID" in students
+        ? [
+            [
+              "id",
+              "Nom",
+              "Prenom",
+              "Grade",
+              "Sexe",
+              "Date de naissance",
+              "Lieu de naissance",
+              "Matricule",
+              "Contact du tuteur",
+              "Photo",
+            ],
+            ...students.map((student: any) => [
+              student.studentID,
+              student.nom,
+              student.prenom,
+              student.grade,
+              student.sexe,
+              student.date_de_naissance,
+              student.lieu_de_naissance,
+              student.matricule,
+              student.contact_du_tuteur,
+              student.photo.split("/").pop()!,
+            ]),
+          ]
+        : [
+            ["id", "Nom", "Prenom", "Matricule", "Contact", "Photo"],
+            ...students.map((pro: any) => [
+              pro.proID,
+              pro.nom,
+              pro.prenom,
+              pro.matricule,
+              pro.contact,
+              pro.photo.split("/").pop()!,
+            ]),
+          ];
 
     // Create a new workbook and worksheet
     const ws = XLSX.utils.aoa_to_sheet(data);
@@ -56,8 +69,8 @@ export const generateExcel = async (
     for (const student of students) {
       const photoURI = await StorageAccessFramework.createFileAsync(
         downloadsUri.directoryUri,
-        student.studentID,
-        "image/png"
+        student.photo.split(".")[0]!,
+        "image/jpeg"
       );
       supabase.storage
         .from("files")

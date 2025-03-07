@@ -2,7 +2,7 @@ import { Image, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { supabase } from "../utils/supabase";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Student } from "../app/(auth)/list";
+import { Pro, Student } from "../app/(auth)/list";
 import { useRouter } from "expo-router";
 import Checkbox from "expo-checkbox";
 
@@ -14,11 +14,11 @@ const StudentItem = ({
   onCkecked,
   preview,
 }: {
-  item: Student;
+  item: Student | Pro;
   onRemoveImage: () => void;
   isAdmin: boolean;
-  onCkecked: (student: Student) => void;
-  preview: (student: Student) => void;
+  onCkecked: (item: Student | Pro) => void;
+  preview: (item: Student | Pro) => void;
 }) => {
   const [image, setImage] = useState<string>("");
   const [isChecked, setIsChecked] = useState<boolean>(false);
@@ -36,10 +36,16 @@ const StudentItem = ({
     });
 
   const onEdit = () => {
-    router.push({
-      pathname: "/form",
-      params: { studentToEdit: JSON.stringify({ ...item }) },
-    });
+    if ("studentID" in item)
+      router.push({
+        pathname: "/form",
+        params: { studentToEdit: JSON.stringify({ ...item }) },
+      });
+    else
+      router.push({
+        pathname: "/proForm",
+        params: { proToEdit: JSON.stringify({ ...item }) },
+      });
   };
 
   const onCheck = () => {
@@ -65,8 +71,20 @@ const StudentItem = ({
       )}
       <View style={{ flex: 1, marginLeft: 10 }}>
         <Text style={styles.title}>{`${item.nom} ${item.prenom}`}</Text>
-        <Text style={{ flex: 1, color: "#000" }}>Classe: {item.grade}</Text>
-        <Text style={{ flex: 1, color: "#000" }}>Sexe: {item.sexe}</Text>
+        {"grade" in item ? (
+          <Text style={{ flex: 1, color: "#000" }}>Classe: {item.grade}</Text>
+        ) : (
+          <Text style={{ flex: 1, color: "#000" }}>
+            Classe: {item.matricule}
+          </Text>
+        )}
+        {"sexe" in item ? (
+          <Text style={{ flex: 1, color: "#000" }}>Sexe: {item.sexe}</Text>
+        ) : (
+          <Text style={{ flex: 1, color: "#000" }}>
+            Contact: {item.contact}
+          </Text>
+        )}
       </View>
       {/* View image button */}
       <View>

@@ -18,7 +18,7 @@ import { supabase, adminEmail } from "../utils/supabase";
 import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import Spinner from "react-native-loading-spinner-overlay";
-import { getSchools } from "@/utils/schools";
+import { getAssociations } from "@/utils/associations";
 import { SelectList } from "@/react-native-dropdown-select-list";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
@@ -32,63 +32,50 @@ type School = {
 };
 
 const list = () => {
-  const { user, sID, signOut } = useAuth();
+  const { user, pID, signOut } = useAuth();
   const [nom, setNom] = useState<string | undefined>(undefined);
   const [prenom, setPrenom] = useState<string | undefined>(undefined);
-  const [grade, setGrade] = useState<string | null>(null);
-  const [sexe, setSexe] = useState<string | null>(null);
   const [matricule, setMatricule] = useState<string | undefined>(undefined);
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | string>();
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [lieuDeNaissance, setLieuDeNaissance] = useState<string | undefined>(
-    undefined
-  );
-  const [personneAContacter, setPersonneAContacter] = useState<
-    string | undefined
-  >(undefined);
   const [numero, setNumero] = useState<string>("");
-  const [schoolID, setSchoolID] = useState<string>("");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [schools, setSchools] = useState<School[]>([]);
+  const [associations, setAssociations] = useState<School[]>([]);
+  const [associationID, setAssociationID] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isStudent, setIsStudent] = useState(false);
+  const [isAPro, setIsAPro] = useState(false);
   const [resetSelectList, setResetSelectList] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [photomodalVisible, setPhotomodalVisible] = useState(false);
   const [status, requestPermission] = ImagePicker.useCameraPermissions();
-  const { studentToEdit } = useLocalSearchParams();
+  const { proToEdit } = useLocalSearchParams();
 
   useEffect(() => {
-    if (!user && !sID) return;
+    if (!user && !pID) return;
     if (user?.email === adminEmail) {
       setIsAdmin(true);
-      getSchools().then((data) => {
+      getAssociations().then(({ data, error }) => {
         if (data) {
-          setSchools(data);
-        }
+          setAssociations(data);
+        } else alert(error);
       });
-    } else if (sID) {
-      setIsStudent(true);
+    } else if (pID) {
+      setIsAPro(true);
     }
   }, [user]);
 
   useEffect(() => {
-    if (studentToEdit && typeof studentToEdit === "string") {
-      const parsedStudentToEdit = JSON.parse(studentToEdit);
-      setNom(parsedStudentToEdit.nom);
-      setPrenom(parsedStudentToEdit.prenom);
-      setGrade(parsedStudentToEdit.grade);
-      setSexe(parsedStudentToEdit.sexe);
-      setDate(new Date(parsedStudentToEdit.date_de_naissance));
-      setLieuDeNaissance(parsedStudentToEdit.lieu_de_naissance);
-      setPersonneAContacter(parsedStudentToEdit.tuteur);
-      setNumero(parsedStudentToEdit.contact_du_tuteur);
-      setSchoolID(parsedStudentToEdit.school);
+    if (proToEdit && typeof proToEdit === "string") {
+      const parsedProToEdit = JSON.parse(proToEdit);
+      setNom(parsedProToEdit.nom);
+      setPrenom(parsedProToEdit.prenom);
+      setNumero(parsedProToEdit.contact);
+      setAssociationID(parsedProToEdit.association);
+      setMatricule(parsedProToEdit.matricule);
 
       supabase.storage
         .from("files")
-        .download(parsedStudentToEdit.photo)
+        .download(parsedProToEdit.photo)
         .then(({ data }) => {
           const fr = new FileReader();
           fr.readAsDataURL(data!);
@@ -139,12 +126,7 @@ const list = () => {
   const reset = () => {
     setNom("");
     setPrenom("");
-    setGrade(null);
-    setSexe(null);
     setPhoto(undefined);
-    setDate(undefined);
-    setLieuDeNaissance("");
-    setPersonneAContacter("");
     setNumero("");
     setResetSelectList(true);
     setMatricule("");
@@ -158,15 +140,7 @@ const list = () => {
       alert("Veuillez choisir une photo SVP.");
       return;
     }
-    if (
-      !nom ||
-      !grade ||
-      !sexe ||
-      !date ||
-      !lieuDeNaissance ||
-      !num ||
-      !matricule
-    ) {
+    if (!nom || !num || !matricule) {
       alert("Tous les champs sont obligatoires.");
       return;
     }
@@ -180,12 +154,12 @@ const list = () => {
     setLoading(true);
 
     // Normal data insertion
-    if (typeof photo !== "string" && !studentToEdit) {
+    if (typeof photo !== "string" && !proToEdit) {
       const base64 = await FileSystem.readAsStringAsync(photo!.uri, {
         encoding: "base64",
       });
       const filePath = `${
-        isAdmin ? schoolID : isStudent ? sID : user!.id
+        isAdmin ? associationID : isAPro ? pID : user!.id
       }/${new Date().getTime()}.jpg`;
       const contentType = "image/jpg";
       const { data, error } = await supabase.storage
@@ -196,17 +170,13 @@ const list = () => {
         setLoading(false);
         return;
       } else {
-        const { error } = await supabase.from("students").insert({
+        const { error } = await supabase.from("professionals").insert({
           nom: nom.trim(),
           prenom: prenom?.trim(),
-          grade: grade,
-          sexe: sexe,
           photo: filePath,
-          date_de_naissance: date,
           matricule: matricule?.trim(),
-          lieu_de_naissance: lieuDeNaissance?.trim(),
-          contact_du_tuteur: num,
-          school: isAdmin ? schoolID : isStudent ? sID : user!.id,
+          contact: num,
+          association: isAdmin ? associationID : isAPro ? pID : user!.id,
         });
         if (error) {
           alert(`There was an error: ${error.message}`);
@@ -215,13 +185,13 @@ const list = () => {
           reset();
         }
       }
-    } else if (studentToEdit && typeof studentToEdit === "string") {
+    } else if (proToEdit && typeof proToEdit === "string") {
       // Update data of the student
       if (typeof photo !== "string") {
         const base64 = await FileSystem.readAsStringAsync(photo!.uri, {
           encoding: "base64",
         });
-        const filePath = JSON.parse(studentToEdit).photo;
+        const filePath = JSON.parse(proToEdit).photo;
         const contentType = "image/jpg";
         const { data, error } = await supabase.storage
           .from("files")
@@ -234,18 +204,14 @@ const list = () => {
       }
 
       const { error } = await supabase
-        .from("students")
+        .from("professionals")
         .update({
           nom: nom.trim(),
           prenom: prenom?.trim(),
-          grade: grade,
-          sexe: sexe,
-          date_de_naissance: date,
           matricule: matricule?.trim(),
-          lieu_de_naissance: lieuDeNaissance?.trim(),
-          contact_du_tuteur: num,
+          contact: num,
         })
-        .eq("studentID", JSON.parse(studentToEdit).studentID);
+        .eq("proID", JSON.parse(proToEdit).proID);
 
       if (error) {
         setLoading(false);
@@ -256,36 +222,18 @@ const list = () => {
       }
     }
     setLoading(false);
-    if (!isStudent) router.replace("/list");
+    if (!isAPro) router.replace("/list");
   };
 
   const onSubmmitStudent = () => {
     setModalVisible(true);
   };
 
-  const onChange = (event: any, selectedDate: any) => {
-    const currentDate = selectedDate;
-    setDate(currentDate);
-  };
-
-  const showMode = (currentMode: any) => {
-    DateTimePickerAndroid.open({
-      value: date || new Date(),
-      onChange,
-      mode: currentMode,
-      is24Hour: true,
-    });
-  };
-
-  const showDatepicker = () => {
-    showMode("date");
-  };
-
   const onNumberChange = (text: string) => {
     setNumero(text);
   };
 
-  const resetFunc = () => {
+  const resetFunction = () => {
     setResetSelectList(false);
   };
 
@@ -322,49 +270,6 @@ const list = () => {
           onChangeText={setPrenom}
           style={styles.inputField}
         />
-        <SelectList
-          data={grades.map((g, i) => {
-            return { key: i, value: g };
-          })}
-          setSelected={setGrade}
-          search={false}
-          save="value"
-          placeholder="Classe"
-          boxStyles={styles.inputField}
-          dropdownTextStyles={{ color: "#000" }}
-          dropdownStyles={styles.dropDown}
-          inputStyles={grade ? { color: "#000" } : { color: "#656565" }}
-          reset={resetSelectList}
-          resetFunction={resetFunc}
-        />
-        <SelectList
-          data={[
-            { key: 1, value: "F" },
-            { key: 2, value: "M" },
-          ]}
-          setSelected={setSexe}
-          search={false}
-          save="value"
-          placeholder="Sexe"
-          boxStyles={styles.inputField}
-          dropdownTextStyles={{ color: "#000" }}
-          dropdownStyles={styles.dropDown}
-          inputStyles={sexe ? { color: "#000" } : { color: "#656565" }}
-          reset={resetSelectList}
-          resetFunction={resetFunc}
-        />
-        <TextInput
-          placeholder="Date de naissance"
-          value={date ? date.toDateString() : ""}
-          onFocus={showDatepicker}
-          style={styles.inputField}
-        />
-        <TextInput
-          placeholder="Lieu de naissance"
-          value={lieuDeNaissance}
-          onChangeText={setLieuDeNaissance}
-          style={styles.inputField}
-        />
         <TextInput
           placeholder="Matricule"
           value={matricule}
@@ -372,26 +277,28 @@ const list = () => {
           style={styles.inputField}
         />
         <TextInput
-          placeholder="Contact en cas de besoin"
+          placeholder="Contact"
           value={numero.replace(/(\d{2})(?=\d)/g, "$1 ")}
           onChangeText={onNumberChange}
           style={styles.inputField}
           keyboardType="number-pad"
         />
-        {isAdmin && !studentToEdit && (
+        {isAdmin && !proToEdit && (
           <SelectList
-            data={schools.map((school) => {
-              return { key: school.id, value: school.name };
+            data={associations.map((association) => {
+              return { key: association.id, value: association.name };
             })}
-            setSelected={setSchoolID}
+            setSelected={setAssociationID}
             save="key"
-            placeholder="Choisir un etablissement"
+            placeholder="Choisir une Association"
             boxStyles={styles.inputField}
             dropdownTextStyles={{ color: "#000" }}
             dropdownStyles={styles.dropDown}
-            inputStyles={schoolID ? { color: "#000" } : { color: "#656565" }}
+            inputStyles={
+              associationID ? { color: "#000" } : { color: "#656565" }
+            }
             reset={resetSelectList}
-            resetFunction={resetFunc}
+            resetFunction={resetFunction}
           />
         )}
         <TouchableOpacity
@@ -422,20 +329,16 @@ const list = () => {
             <Text style={styles.modalTitle}>Confirmez vos informations</Text>
             <Text style={styles.modalText}>Nom: {nom}</Text>
             <Text style={styles.modalText}>Prenom: {prenom}</Text>
-            <Text style={styles.modalText}>Grade: {grade}</Text>
-            <Text style={styles.modalText}>Sexe: {sexe}</Text>
-            <Text style={styles.modalText}>
-              Date de naissance: {date ? date.toDateString() : ""}
-            </Text>
-            <Text style={styles.modalText}>
-              Lieu de naissance: {lieuDeNaissance}
-            </Text>
             <Text style={styles.modalText}>Matricule: {matricule}</Text>
-            <Text style={styles.modalText}>Contact du tuteur: {numero}</Text>
+            <Text style={styles.modalText}>Contact: {numero}</Text>
             {isAdmin && (
               <Text style={styles.modalText}>
                 Etablissement:{" "}
-                {schools.find((school) => school.id === schoolID)?.name}
+                {
+                  associations.find(
+                    (association) => association.id === associationID
+                  )?.name
+                }
               </Text>
             )}
             <View style={styles.modalButtons}>

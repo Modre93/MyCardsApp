@@ -6,6 +6,8 @@ import {
   Text,
   Modal,
   Image,
+  Pressable,
+  Switch,
 } from "react-native";
 import { useEffect, useState } from "react";
 import * as React from "react";
@@ -18,7 +20,13 @@ import Spinner from "react-native-loading-spinner-overlay";
 import { SelectList } from "@/react-native-dropdown-select-list";
 import { grades } from "@/assets/images/data/grades";
 import { generateExcel } from "../../utils/download";
-import { getSchools } from "@/utils/schools";
+import {
+  getSchools,
+  getSchool,
+  getStudentsDataBySchoolID,
+  getAllStudents,
+} from "@/utils/schools";
+import { getAllPros, getProsDataByAssociation } from "@/utils/associations";
 
 const adminEmail = "admin@admin.com";
 
@@ -36,6 +44,16 @@ export type Student = {
   school: string;
 };
 
+export type Pro = {
+  proID: string;
+  nom: string;
+  prenom: string;
+  matricule: string;
+  contact: string;
+  photo: string;
+  association: string;
+};
+
 type SchoolData = {
   id: string;
   name: string;
@@ -46,7 +64,10 @@ const list = () => {
   const { user } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [filteredPros, setFilteredPros] = useState<Pro[]>([]);
   const [checkedStudents, setCheckedStudents] = useState<Student[]>([]);
+  const [checkedPros, setCheckedPros] = useState<Pro[]>([]);
+  const [pros, setPros] = useState<Pro[]>([]);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -55,112 +76,159 @@ const list = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
   const [previewStudent, setPreviewStudent] = useState<Student>();
+  const [previewPro, setPreviewPro] = useState<Pro>();
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [studentToRemove, setStudentToRemove] = useState<Student>();
   const [studentToRemoveIndex, setStudentToRemoveIndex] = useState<number>();
+  const [proToRemove, setProToRemove] = useState<Pro>();
+  const [proToRemoveIndex, setProToRemoveIndex] = useState<number>();
+  const [userData, setUserData] = useState<SchoolData>();
+  const [showPros, setShowPros] = useState<boolean>(false);
+  const [selectlistData, setSelectlistData] = useState<any[]>([]);
+  const [selectlistReset, setSelectlistReset] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!user) return;
-    if (user.email === adminEmail) {
-      setIsAdmin(true);
-      getSchools().then((data) => {
+    const fetchData = async () => {
+      if (!user) return;
+      if (user.email === adminEmail) {
+        setIsAdmin(true);
+        const data = await getSchools();
         setSchoolsData(data!);
-      });
-    }
+      } else {
+        const data = await getSchool(user!.id);
+        if (data) {
+          setUserData(data);
+        } else {
+          alert("Une erreur s'est produite");
+        }
+      }
+    };
 
-    // Load user images
-    loadImages();
+    fetchData();
   }, [user]);
 
-  const data = isAdmin
-    ? schoolsData.map((school) => ({ key: school.id, value: school.name }))
-    : grades.map((value, index) => ({
-        key: index,
-        value: value,
-      })); //grade[schoolData.type];
+  useEffect(() => {
+    if (userData || schoolsData.length > 0) loadData();
+  }, [userData, schoolsData]);
 
-  const getStudentData = async () => {
-    if (user!.email === adminEmail) {
-      const { data, error } = await supabase.from("students").select(`studentID,
-          nom,
-          prenom,
-          grade,
-          sexe,
-          date_de_naissance,
-          lieu_de_naissance,
-          matricule,
-          contact_du_tuteur,
-          photo,school`);
-      if (data) {
-        setStudents(data);
-      } else {
-        console.log(error);
-      }
+  useEffect(() => {
+    if (isAdmin) {
+      if (showPros)
+        setSelectlistData(
+          schoolsData
+            .filter((school) => school.type === "association")
+            .map((school) => ({ key: school.id, value: school.name }))
+        );
+      else
+        setSelectlistData(
+          schoolsData
+            .filter((school) => school.type !== "association")
+            .map((school) => ({ key: school.id, value: school.name }))
+        );
     } else {
-      const { data, error } = await supabase
-        .from("students")
-        .select(
-          `studentID,
-          nom,
-          prenom,
-          grade,
-          sexe,
-          date_de_naissance,
-          lieu_de_naissance,
-          matricule,
-          contact_du_tuteur,
-          photo,school`
-        )
-        .eq("school", user!.id);
-      if (data) {
-        setStudents(data);
+      if (userData?.type !== "association") {
+        setSelectlistData(
+          grades.map((value, index) => ({ key: index, value: value }))
+        );
       } else {
-        console.log(error);
+        setSelectlistData(
+          schoolsData.map((school) => {
+            if (school.type === "association")
+              return { key: school.id, value: school.name };
+          })
+        );
       }
+    }
+  }, [isAdmin, showPros, schoolsData, userData]);
+
+  const getAllData = async () => {
+    if (user!.email === adminEmail) {
+      const { data: sData, error: sError } = await getAllStudents();
+      if (sData) {
+        setStudents(sData);
+      } else {
+        console.log(sError);
+      }
+      const { data: pData, error: pError } = await getAllPros();
+      if (pData) {
+        setPros(pData);
+      } else alert(pError);
+    } else if (userData?.type === "association") {
+      const { data, error } = await getProsDataByAssociation(user!.id);
+      if (data) setPros(data);
+      else alert(error);
+    } else {
+      const { data, error } = await getStudentsDataBySchoolID(user!.id);
+      if (data) setStudents(data);
+      else alert(error);
     }
   };
 
-  const loadImages = async () => {
+  const loadData = async () => {
     setLoading(true);
-    getStudentData();
+    getAllData();
     setLoading(false);
   };
 
   const onAddStudent = async () => {
-    router.push("/form");
+    if (userData?.type === "association" || showPros) router.push("/proForm");
+    else router.push("/form");
   };
 
-  const onRemoveStudentModal = (student: Student, listIndex: number) => {
-    setStudentToRemove(student);
-    setStudentToRemoveIndex(listIndex);
+  const onRemoveModal = (item: Student | Pro, listIndex: number) => {
+    if ("studentID" in item) {
+      setStudentToRemove(item);
+      setStudentToRemoveIndex(listIndex);
+    } else {
+      setProToRemove(item);
+      setProToRemoveIndex(listIndex);
+    }
     setDeleteModalVisible(true);
   };
 
-  const onRemoveStudent = async (item: Student, listIndex: number) => {
+  const onRemove = async (item: Student | Pro, listIndex: number) => {
     await supabase.storage.from("files").remove([item.photo]);
-    await supabase.from("students").delete().eq("photo", item.photo);
-    const newStudents = [...students];
-    newStudents.splice(listIndex, 1);
-    setStudents(newStudents);
+    if ("studentID" in item) {
+      await supabase.from("students").delete().eq("photo", item.photo);
+      const newStudents = [...students];
+      newStudents.splice(listIndex, 1);
+      setStudents(newStudents);
+      setStudentToRemove(undefined);
+      setStudentToRemoveIndex(undefined);
+    } else {
+      await supabase.from("professionals").delete().eq("photo", item.photo);
+      const newPros = [...pros];
+      newPros.splice(listIndex, 1);
+      setPros(newPros);
+      setProToRemove(undefined);
+      setProToRemoveIndex(undefined);
+    }
     setDeleteModalVisible(false);
   };
 
   const onFilterChange = () => {
     if (!isAdmin)
       setFilteredStudents(students.filter((item) => item.grade === selected));
-    else
-      setFilteredStudents(students.filter((item) => item.school === selected));
+    else {
+      if (showPros)
+        setFilteredPros(pros.filter((item) => item.association === selected));
+      else
+        setFilteredStudents(
+          students.filter((item) => item.school === selected)
+        );
+    }
   };
 
-  const onChecked = (item: Student) => {
-    setCheckedStudents([...checkedStudents, item]);
+  const onChecked = (item: Student | Pro) => {
+    if ("studentID" in item) setCheckedStudents([...checkedStudents, item]);
+    else setCheckedPros([...checkedPros, item]);
   };
 
-  const onPriewPressed = async (student: Student) => {
+  const onPriewPressed = async (item: Student | Pro) => {
     setLoading(true);
     await supabase.storage
       .from("files")
-      .download(student.photo)
+      .download(item.photo)
       .then(({ data }) => {
         const fr = new FileReader();
         fr.readAsDataURL(data!);
@@ -168,34 +236,103 @@ const list = () => {
           setPreviewImage(fr.result as string);
         };
       });
-    setPreviewStudent(student);
+    if ("studentID" in item) setPreviewStudent(item);
+    else setPreviewPro(item);
     setLoading(false);
     setPreviewVisible(true);
   };
+
+  const resetFunc = () => {
+    setSelectlistReset(false);
+  };
+
+  // onDownload = async () => {
+  //   if (checkedStudents.length > 0) {
+  //     generateExcel(checkedStudents, schoolsData.find((s) => s.id === selected)!.name);
+  //   } else if (filteredStudents.length > 0) {
+  //     generateExcel(filteredStudents, schoolsData.find((s) => s.id === selected)!.name);
+  //   } else if (checkedPros.length > 0) {
+  //     generateExcel(checkedPros, schoolsData.find((s) => s.id === selected)!.name);
+  //   }else if (filteredPros.length > 0) {
+  //     generateExcel(filteredPros, schoolsData.find((s) => s.id === selected)!.name);
+  //   } else {
+  //     alert("Veuillez choisir une école ou une association");
+  // };
 
   return (
     <View style={styles.container}>
       <Spinner visible={loading} />
       <SelectList
-        data={data}
+        data={selectlistData}
         setSelected={setSelected}
         save={`${isAdmin ? "key" : "value"}`}
-        placeholder="Search"
+        placeholder="Select"
         onSelect={onFilterChange}
         dropdownTextStyles={{ color: "#000" }}
         dropdownStyles={styles.dropBox}
-        boxStyles={styles.searchField}
-        reset={false}
-        search={true}
+        boxStyles={
+          isAdmin
+            ? { ...styles.searchField }
+            : { ...styles.searchField, marginBottom: 10 }
+        }
+        reset={selectlistReset}
+        resetFunction={resetFunc}
+        search={false}
       />
+      {isAdmin && (
+        <Switch
+          trackColor={{ false: "#767577", true: "#4caf50" }}
+          thumbColor={showPros ? "#fff" : "#f4f3f4"}
+          ios_backgroundColor="#3e3e3e"
+          onValueChange={() => {
+            setSelectlistReset(true);
+            setSelected("");
+            setFilteredPros([]);
+            setFilteredStudents([]);
+            setCheckedPros([]);
+            setCheckedStudents([]);
+            setShowPros(!showPros);
+          }}
+          value={showPros}
+          style={{ paddingBottom: 10 }}
+        />
+      )}
       <ScrollView>
-        {selected !== "" ? (
+        {userData?.type === "association" || showPros ? (
+          selected !== "" ? (
+            filteredPros.length > 0 ? (
+              filteredPros.map((item, index) => (
+                <StudentItem
+                  key={item.proID}
+                  item={item}
+                  onRemoveImage={() => onRemoveModal(item, index)}
+                  isAdmin={isAdmin}
+                  onCkecked={onChecked}
+                  preview={onPriewPressed}
+                />
+              ))
+            ) : (
+              <Text style={styles.header}>Aucun résultat trouvé</Text>
+            )
+          ) : (
+            pros.map((item, index) => (
+              <StudentItem
+                key={item.proID}
+                item={item}
+                onRemoveImage={() => onRemoveModal(item, index)}
+                isAdmin={isAdmin}
+                onCkecked={onChecked}
+                preview={onPriewPressed}
+              />
+            ))
+          )
+        ) : selected !== "" ? (
           filteredStudents.length > 0 ? (
             filteredStudents.map((item, index) => (
               <StudentItem
                 key={item.studentID}
                 item={item}
-                onRemoveImage={() => onRemoveStudentModal(item, index)}
+                onRemoveImage={() => onRemoveModal(item, index)}
                 isAdmin={isAdmin}
                 onCkecked={onChecked}
                 preview={onPriewPressed}
@@ -209,7 +346,7 @@ const list = () => {
             <StudentItem
               key={item.studentID}
               item={item}
-              onRemoveImage={() => onRemoveStudentModal(item, index)}
+              onRemoveImage={() => onRemoveModal(item, index)}
               isAdmin={isAdmin}
               onCkecked={onChecked}
               preview={onPriewPressed}
@@ -231,7 +368,17 @@ const list = () => {
                   filteredStudents,
                   schoolsData.find((s) => s.id === selected)!.name
                 )
-              : alert("Veuillez choisir une école")
+              : checkedPros.length > 0
+              ? generateExcel(
+                  checkedPros,
+                  schoolsData.find((p) => p.id === selected)!.name
+                )
+              : filteredPros.length > 0
+              ? generateExcel(
+                  filteredPros,
+                  schoolsData.find((p) => p.id === selected)!.name
+                )
+              : alert("Veuillez choisir une école ou une association")
           }
           style={{ ...styles.fab, bottom: 130, right: 30 }}
         >
@@ -246,7 +393,7 @@ const list = () => {
         <View
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.8)",
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
             justifyContent: "center",
             alignItems: "center",
           }}
@@ -262,7 +409,8 @@ const list = () => {
           >
             <View style={{ alignItems: "center" }}>
               <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
-                CARTE SCOLAIRE
+                CARTE
+                {previewStudent ? " SCOLAIRE" : " DE MEMBRE"}
               </Text>
             </View>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
@@ -270,24 +418,36 @@ const list = () => {
                 source={{ uri: previewImage }}
                 style={{ width: 100, height: 125, marginRight: 10 }}
               />
-              <View>
-                <Text>Nom: {previewStudent?.nom.toLocaleUpperCase()} </Text>
-                <Text>Prénom(s): {previewStudent?.prenom} </Text>
-                <Text>Classe: {previewStudent?.grade}</Text>
-                <Text>sexe: {previewStudent?.sexe} </Text>
-                <Text>
-                  Né(e) le:{" "}
-                  {previewStudent?.date_de_naissance
-                    .split("-")
-                    .reverse()
-                    .join("/")}{" "}
-                  A {previewStudent?.lieu_de_naissance}
-                </Text>
-                <Text>matricule: {previewStudent?.matricule}</Text>
-                <Text>
-                  Contact en cas de besoin: {previewStudent?.contact_du_tuteur}
-                </Text>
-              </View>
+              {previewStudent && (
+                <View>
+                  <Text>Nom: {previewStudent.nom.toLocaleUpperCase()} </Text>
+                  <Text>Prénom(s): {previewStudent.prenom} </Text>
+                  <Text>Classe: {previewStudent.grade}</Text>
+                  <Text>sexe: {previewStudent.sexe} </Text>
+                  <Text>
+                    Né(e) le:{" "}
+                    {previewStudent?.date_de_naissance
+                      .split("-")
+                      .reverse()
+                      .join("/")}{" "}
+                    A {previewStudent?.lieu_de_naissance}
+                  </Text>
+                  <Text>matricule: {previewStudent?.matricule}</Text>
+
+                  <Text>
+                    Contact en cas de besoin:{" "}
+                    {previewStudent?.contact_du_tuteur}
+                  </Text>
+                </View>
+              )}
+              {previewPro && (
+                <View>
+                  <Text>Nom: {previewPro.nom.toLocaleUpperCase()} </Text>
+                  <Text>Prénom(s): {previewPro.prenom} </Text>
+                  <Text>matricule: {previewPro.matricule}</Text>
+                  <Text>Contact: {previewPro.contact}</Text>
+                </View>
+              )}
             </View>
           </View>
           <TouchableOpacity onPress={() => setPreviewVisible(false)}>
@@ -325,9 +485,11 @@ const list = () => {
               }}
             >
               <TouchableOpacity
-                onPress={() =>
-                  onRemoveStudent(studentToRemove!, studentToRemoveIndex!)
-                }
+                onPress={() => {
+                  if (studentToRemove)
+                    onRemove(studentToRemove!, studentToRemoveIndex!);
+                  if (proToRemove) onRemove(proToRemove!, proToRemoveIndex!);
+                }}
                 style={{ padding: 10, backgroundColor: "red", borderRadius: 5 }}
               >
                 <Text style={{ color: "#fff", fontWeight: "bold" }}>
@@ -379,7 +541,6 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   searchField: {
-    marginBottom: 20,
     height: 50,
     borderWidth: 1,
     borderColor: "#4caf50",

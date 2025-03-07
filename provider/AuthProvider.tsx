@@ -14,7 +14,11 @@ type AuthProps = {
   signOut?: () => void;
   sID: string | null;
   setSID: (id: string) => void;
+  pID: string | null;
+  setPID: (id: string) => void;
 };
+
+const adminEmail = "admin@admin.com";
 
 export const AuthContext = createContext<Partial<AuthProps>>({});
 
@@ -28,12 +32,17 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [session, setSession] = useState<Session | null>(null);
   const [initialized, setInitialized] = useState<boolean>(false);
   const [sID, setSID] = useState<string | null>(null);
+  const [pID, setPID] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>();
 
   useEffect(() => {
     // Listen for changes to authentication state
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session ? session.user : null);
+      setIsAdmin(
+        session ? (session.user.email === adminEmail ? true : false) : false
+      );
       setInitialized(true);
     });
     return () => {
@@ -45,6 +54,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const signOut = async () => {
     await supabase.auth.signOut();
     setSID(null);
+    setPID(null);
   };
 
   const value = {
@@ -54,6 +64,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     signOut,
     sID,
     setSID,
+    pID,
+    setPID,
+    isAdmin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

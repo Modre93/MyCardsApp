@@ -14,11 +14,46 @@ export const getSchools = async () => {
 export const getSchool = async (id: string) => {
   const { data, error } = await supabase
     .from("etablissements")
-    .select("name, type")
+    .select("id, name, type")
     .eq("id", id);
   if (error) {
     console.log(error);
   } else {
     return data[0];
   }
+};
+
+export const getStudentsDataBySchoolID = async (id: string) => {
+  const { data, error } = await supabase
+    .from("students")
+    .select(
+      `studentID,
+            nom,
+            prenom,
+            grade,
+            sexe,
+            date_de_naissance,
+            lieu_de_naissance,
+            matricule,
+            contact_du_tuteur,
+            photo,school`
+    )
+    .eq("school", id);
+  return { data, error };
+};
+
+export const getAllStudents = async () => {
+  const { data, error } = await supabase.from("students").select(
+    `studentID,
+            nom,
+            prenom,
+            grade,
+            sexe,
+            date_de_naissance,
+            lieu_de_naissance,
+            matricule,
+            contact_du_tuteur,
+            photo,school`
+  );
+  return { data, error };
 };

@@ -112,6 +112,7 @@ export interface SelectListProps {
    */
   closeicon?: JSX.Element;
   reset: boolean;
+  resetFunction: () => void;
 }
 
 export interface MultipleSelectListProps {

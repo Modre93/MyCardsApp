@@ -39,6 +39,7 @@ const SelectList: React.FC<SelectListProps> = ({
   dropdownShown = false,
   fontFamily,
   reset,
+  resetFunction,
 }) => {
   const oldOption = React.useRef(null);
   const [_firstRender, _setFirstRender] = React.useState<boolean>(true);
@@ -107,8 +108,9 @@ const SelectList: React.FC<SelectListProps> = ({
 
   React.useEffect(() => {
     if (reset) {
-      setSelected(undefined);
+      setSelected("");
       setSelectedVal("");
+      resetFunction();
     }
   }, [reset]);
 

@@ -21,7 +21,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
   const [code, setCode] = useState("");
-  const { setSID } = useAuth();
+  const { setSID, setPID } = useAuth();
   const router = useRouter();
 
   // Sign in with email and password
@@ -47,9 +47,13 @@ export default function Login() {
     if (error) {
       alert(error.message);
     } else {
-      // Save the school ID
-      if (setSID) setSID(data[0].id);
-      router.replace("/form");
+      if (data[0].type === "association") {
+        setPID!(data[0].id);
+        router.replace("/proForm");
+      } else {
+        setSID!(data[0].id);
+        router.replace("/form");
+      }
     }
     setLoading(false);
   };
