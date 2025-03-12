@@ -6,9 +6,7 @@ import {
   Text,
   Modal,
   Image,
-  Pressable,
   Switch,
-  Alert,
 } from "react-native";
 import { useEffect, useState } from "react";
 import * as React from "react";
@@ -19,10 +17,8 @@ import StudentItem from "../../components/StudentItem";
 import { useRouter } from "expo-router";
 import Spinner from "react-native-loading-spinner-overlay";
 import { SelectList } from "@/react-native-dropdown-select-list";
-import { grades } from "@/assets/images/data/grades";
-import { generateExcel } from "../../utils/download";
+import { grades2 } from "@/assets/data/grades";
 import {
-  getSchools,
   getSchool,
   getStudentsDataBySchoolID,
   getAllStudents,
@@ -92,21 +88,15 @@ const list = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
-      if (user.email === adminEmail) {
-        setIsAdmin(true);
-        const data = await getSchools();
-        setSchoolsData(data!);
+      const data = await getSchool(user!.id);
+      if (data) {
+        setUserData(data);
       } else {
-        const data = await getSchool(user!.id);
-        if (data) {
-          setUserData(data);
-        } else {
-          Toast.show({
-            type: "error",
-            text1: "Erreur",
-            text2: "Une erreur s'est produite lors du chargement des données",
-          });
-        }
+        Toast.show({
+          type: "error",
+          text1: "Erreur",
+          text2: "Une erreur s'est produite lors du chargement des données",
+        });
       }
     };
 
@@ -118,34 +108,20 @@ const list = () => {
   }, [userData, schoolsData]);
 
   useEffect(() => {
-    if (isAdmin) {
-      if (showPros)
+    //Data to show in the select list based on the user type
+    if (userData) {
+      if (userData.type !== "association" && userData.type !== "entreprise") {
         setSelectlistData(
-          schoolsData
-            .filter((school) => school.type === "association")
-            .map((school) => ({ key: school.id, value: school.name }))
-        );
-      else
-        setSelectlistData(
-          schoolsData
-            .filter((school) => school.type !== "association")
-            .map((school) => ({ key: school.id, value: school.name }))
-        );
-    } else {
-      if (userData?.type !== "association") {
-        setSelectlistData(
-          grades.map((value, index) => ({ key: index, value: value }))
-        );
-      } else {
-        setSelectlistData(
-          schoolsData.map((school) => {
-            if (school.type === "association")
-              return { key: school.id, value: school.name };
-          })
+          grades2[userData.type as keyof typeof grades2].map(
+            (value: string, index: number) => ({
+              key: index,
+              value: value,
+            })
+          )
         );
       }
     }
-  }, [isAdmin, showPros, schoolsData, userData]);
+  }, [schoolsData, userData]);
 
   const getAllData = async () => {
     if (user!.email === adminEmail) {
@@ -177,8 +153,13 @@ const list = () => {
   };
 
   const onAddStudent = async () => {
-    if (userData?.type === "association" || showPros) router.push("/proForm");
-    else router.push("/form");
+    if (
+      userData?.type === "association" ||
+      userData?.type === "entreprise" ||
+      showPros
+    )
+      router.push("/proForm");
+    else router.push({ pathname: "/form", params: { type: userData?.type } });
   };
 
   const onRemoveModal = (item: Student | Pro, listIndex: number) => {
@@ -307,26 +288,8 @@ const list = () => {
         resetFunction={resetFunc}
         search={false}
       />
-      {isAdmin && (
-        <Switch
-          trackColor={{ false: "#767577", true: "#4caf50" }}
-          thumbColor={showPros ? "#fff" : "#f4f3f4"}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={() => {
-            setSelectlistReset(true);
-            setSelected("");
-            setFilteredPros([]);
-            setFilteredStudents([]);
-            setCheckedPros([]);
-            setCheckedStudents([]);
-            setShowPros(!showPros);
-          }}
-          value={showPros}
-          style={{ paddingBottom: 10 }}
-        />
-      )}
       <ScrollView>
-        {userData?.type === "association" || showPros ? (
+        {userData?.type === "association" || userData?.type === "entreprise" ? (
           selected !== "" ? (
             filteredPros.length > 0 ? (
               filteredPros.map((item, index) => (
@@ -337,6 +300,7 @@ const list = () => {
                   isAdmin={isAdmin}
                   onCkecked={onChecked}
                   preview={onPriewPressed}
+                  type={userData?.type!}
                 />
               ))
             ) : (
@@ -351,6 +315,7 @@ const list = () => {
                 isAdmin={isAdmin}
                 onCkecked={onChecked}
                 preview={onPriewPressed}
+                type={userData?.type!}
               />
             ))
           )
@@ -364,6 +329,7 @@ const list = () => {
                 isAdmin={isAdmin}
                 onCkecked={onChecked}
                 preview={onPriewPressed}
+                type={userData?.type!}
               />
             ))
           ) : (
@@ -378,45 +344,12 @@ const list = () => {
               isAdmin={isAdmin}
               onCkecked={onChecked}
               preview={onPriewPressed}
+              type={userData?.type!}
             />
           ))
         )}
       </ScrollView>
-      {/* FAB to download images */}
-      {user?.email === adminEmail && (
-        <TouchableOpacity
-          onPress={() =>
-            selected !== ""
-              ? checkedStudents.length > 0
-                ? generateExcel(
-                    checkedStudents,
-                    schoolsData.find((s) => s.id === selected)!.name
-                  )
-                : filteredStudents.length > 0
-                ? generateExcel(
-                    filteredStudents,
-                    schoolsData.find((s) => s.id === selected)!.name
-                  )
-                : checkedPros.length > 0
-                ? generateExcel(
-                    checkedPros,
-                    schoolsData.find((p) => p.id === selected)!.name
-                  )
-                : generateExcel(
-                    filteredPros,
-                    schoolsData.find((p) => p.id === selected)!.name
-                  )
-              : Toast.show({
-                  type: "error",
-                  text1: "Erreur",
-                  text2: "Veuillez sélectionner une école ou une association",
-                })
-          }
-          style={{ ...styles.fab, bottom: 130, right: 30 }}
-        >
-          <Ionicons name="download-outline" size={30} color={"#fff"} />
-        </TouchableOpacity>
-      )}
+
       {/* FAB to add images */}
       <TouchableOpacity onPress={onAddStudent} style={styles.fab}>
         <Ionicons name="add" size={30} color={"#fff"} />

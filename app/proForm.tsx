@@ -14,21 +14,13 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../provider/AuthProvider";
 import * as FileSystem from "expo-file-system";
 import { decode } from "base64-arraybuffer";
-import { supabase, adminEmail } from "../utils/supabase";
+import { supabase } from "../utils/supabase";
 import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import Spinner from "react-native-loading-spinner-overlay";
-import { getAssociations } from "@/utils/associations";
-import { SelectList } from "@/react-native-dropdown-select-list";
 import Toast from "react-native-toast-message";
 
 const placeholderImage = require("@/assets/images/placeholder.png");
-
-type School = {
-  id: string;
-  name: string;
-  type: string;
-};
 
 const list = () => {
   const { user, pID, signOut } = useAuth();
@@ -39,11 +31,7 @@ const list = () => {
   const [numero, setNumero] = useState<string>("");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [associations, setAssociations] = useState<School[]>([]);
-  const [associationID, setAssociationID] = useState<string>("");
-  const [isAdmin, setIsAdmin] = useState(false);
   const [isAPro, setIsAPro] = useState(false);
-  const [resetSelectList, setResetSelectList] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [photomodalVisible, setPhotomodalVisible] = useState(false);
   const [status, requestPermission] = ImagePicker.useCameraPermissions();
@@ -51,14 +39,7 @@ const list = () => {
 
   useEffect(() => {
     if (!user && !pID) return;
-    if (user?.email === adminEmail) {
-      setIsAdmin(true);
-      getAssociations().then(({ data, error }) => {
-        if (data) {
-          setAssociations(data);
-        } else alert(error);
-      });
-    } else if (pID) {
+    if (pID) {
       setIsAPro(true);
     }
   }, [user]);
@@ -69,7 +50,6 @@ const list = () => {
       setNom(parsedProToEdit.nom);
       setPrenom(parsedProToEdit.prenom);
       setNumero(parsedProToEdit.contact);
-      setAssociationID(parsedProToEdit.association);
       setMatricule(parsedProToEdit.matricule);
 
       supabase.storage
@@ -135,7 +115,6 @@ const list = () => {
     setPrenom("");
     setPhoto(undefined);
     setNumero("");
-    setResetSelectList(true);
     setMatricule("");
   };
 
@@ -175,9 +154,7 @@ const list = () => {
       const base64 = await FileSystem.readAsStringAsync(photo!.uri, {
         encoding: "base64",
       });
-      const filePath = `${
-        isAdmin ? associationID : isAPro ? pID : user!.id
-      }/${new Date().getTime()}.jpg`;
+      const filePath = `${isAPro ? pID : user!.id}/${new Date().getTime()}.jpg`;
       const contentType = "image/jpg";
       const { data, error } = await supabase.storage
         .from("files")
@@ -197,7 +174,7 @@ const list = () => {
           photo: filePath,
           matricule: matricule?.trim(),
           contact: num,
-          association: isAdmin ? associationID : isAPro ? pID : user!.id,
+          association: isAPro ? pID : user!.id,
         });
         if (error) {
           Toast.show({
@@ -223,11 +200,15 @@ const list = () => {
         });
         const filePath = JSON.parse(proToEdit).photo;
         const contentType = "image/jpg";
-        const { data, error } = await supabase.storage
+        const { error } = await supabase.storage
           .from("files")
           .upload(filePath, decode(base64), { contentType, upsert: true });
         if (error) {
-          alert(`There was an error: ${error.message}`);
+          Toast.show({
+            type: "error",
+            text1: "Erreur",
+            text2: "There was an error.",
+          });
           setLoading(false);
           return;
         }
@@ -265,10 +246,6 @@ const list = () => {
 
   const onNumberChange = (text: string) => {
     setNumero(text);
-  };
-
-  const resetFunction = () => {
-    setResetSelectList(false);
   };
 
   return (
@@ -317,24 +294,6 @@ const list = () => {
           style={styles.inputField}
           keyboardType="number-pad"
         />
-        {isAdmin && !proToEdit && (
-          <SelectList
-            data={associations.map((association) => {
-              return { key: association.id, value: association.name };
-            })}
-            setSelected={setAssociationID}
-            save="key"
-            placeholder="Choisir une Association"
-            boxStyles={styles.inputField}
-            dropdownTextStyles={{ color: "#000" }}
-            dropdownStyles={styles.dropDown}
-            inputStyles={
-              associationID ? { color: "#000" } : { color: "#656565" }
-            }
-            reset={resetSelectList}
-            resetFunction={resetFunction}
-          />
-        )}
         <TouchableOpacity
           onPress={onSubmmitStudent}
           style={{
@@ -365,16 +324,6 @@ const list = () => {
             <Text style={styles.modalText}>Prenom: {prenom}</Text>
             <Text style={styles.modalText}>Matricule: {matricule}</Text>
             <Text style={styles.modalText}>Contact: {numero}</Text>
-            {isAdmin && (
-              <Text style={styles.modalText}>
-                Etablissement:{" "}
-                {
-                  associations.find(
-                    (association) => association.id === associationID
-                  )?.name
-                }
-              </Text>
-            )}
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 onPress={onConfirmSubmit}

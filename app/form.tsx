@@ -18,21 +18,14 @@ import { supabase, adminEmail } from "../utils/supabase";
 import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import Spinner from "react-native-loading-spinner-overlay";
-import { getSchools } from "@/utils/schools";
 import { SelectList } from "@/react-native-dropdown-select-list";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
 
-import { grades } from "@/assets/images/data/grades";
+import { grades2 } from "@/assets/data/grades";
 const placeholderImage = require("@/assets/images/placeholder.png");
 
-type School = {
-  id: string;
-  name: string;
-  type: string;
-};
-
-const list = () => {
+const Form = () => {
   const { user, sID, signOut } = useAuth();
   const [nom, setNom] = useState<string | undefined>(undefined);
   const [prenom, setPrenom] = useState<string | undefined>(undefined);
@@ -45,31 +38,31 @@ const list = () => {
     undefined
   );
   const [numero, setNumero] = useState<string>("");
-  const [schoolID, setSchoolID] = useState<string>("");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [schools, setSchools] = useState<School[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
   const [resetSelectList, setResetSelectList] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [photomodalVisible, setPhotomodalVisible] = useState(false);
   const [status, requestPermission] = ImagePicker.useCameraPermissions();
-  const { studentToEdit } = useLocalSearchParams();
+  const { studentToEdit, type } = useLocalSearchParams();
+  const [grades, setGrades] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user && !sID) return;
-    if (user?.email === adminEmail) {
-      setIsAdmin(true);
-      getSchools().then((data) => {
-        if (data) {
-          setSchools(data);
-        }
-      });
-    } else if (sID) {
+    if (sID) {
       setIsStudent(true);
     }
-  }, [user]);
+    if (type)
+      setGrades(
+        grades2[type as keyof typeof grades2].map(
+          (value: string, index: number) => ({
+            key: index,
+            value: value,
+          })
+        )
+      );
+  }, [user, sID, type]);
 
   useEffect(() => {
     if (studentToEdit && typeof studentToEdit === "string") {
@@ -82,7 +75,6 @@ const list = () => {
       setLieuDeNaissance(parsedStudentToEdit.lieu_de_naissance);
       setMatricule(parsedStudentToEdit.matricule);
       setNumero(parsedStudentToEdit.contact_du_tuteur);
-      setSchoolID(parsedStudentToEdit.school);
 
       supabase.storage
         .from("files")
@@ -200,10 +192,10 @@ const list = () => {
         encoding: "base64",
       });
       const filePath = `${
-        isAdmin ? schoolID : isStudent ? sID : user!.id
+        isStudent ? sID : user!.id
       }/${new Date().getTime()}.jpg`;
       const contentType = "image/jpg";
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from("files")
         .upload(filePath, decode(base64), { contentType });
       if (error) {
@@ -226,7 +218,7 @@ const list = () => {
           matricule: matricule?.trim(),
           lieu_de_naissance: lieuDeNaissance?.trim(),
           contact_du_tuteur: num,
-          school: isAdmin ? schoolID : isStudent ? sID : user!.id,
+          school: isStudent ? sID : user!.id,
         });
         if (error) {
           Toast.show({
@@ -367,9 +359,7 @@ const list = () => {
           style={styles.inputField}
         />
         <SelectList
-          data={grades.map((g, i) => {
-            return { key: i, value: g };
-          })}
+          data={grades}
           setSelected={setGrade}
           search={false}
           save="value"
@@ -422,27 +412,10 @@ const list = () => {
           style={styles.inputField}
           keyboardType="number-pad"
         />
-        {isAdmin && !studentToEdit && (
-          <SelectList
-            data={schools.map((school) => {
-              return { key: school.id, value: school.name };
-            })}
-            setSelected={setSchoolID}
-            save="key"
-            placeholder="Choisir un etablissement"
-            boxStyles={styles.inputField}
-            dropdownTextStyles={{ color: "#000" }}
-            dropdownStyles={styles.dropDown}
-            inputStyles={schoolID ? { color: "#000" } : { color: "#656565" }}
-            reset={resetSelectList}
-            resetFunction={resetFunc}
-          />
-        )}
         <TouchableOpacity
           onPress={onSubmmitStudent}
           style={{
             ...styles.button,
-            flexDirection: "row",
             justifyContent: "center",
           }}
         >
@@ -476,12 +449,6 @@ const list = () => {
             </Text>
             <Text style={styles.modalText}>Matricule: {matricule}</Text>
             <Text style={styles.modalText}>Contact du tuteur: {numero}</Text>
-            {isAdmin && (
-              <Text style={styles.modalText}>
-                Etablissement:{" "}
-                {schools.find((school) => school.id === schoolID)?.name}
-              </Text>
-            )}
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 onPress={onConfirmSubmit}
@@ -642,4 +609,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default list;
+export default Form;

@@ -13,12 +13,14 @@ const StudentItem = ({
   isAdmin,
   onCkecked,
   preview,
+  type,
 }: {
   item: Student | Pro;
   onRemoveImage: () => void;
   isAdmin: boolean;
   onCkecked: (item: Student | Pro) => void;
   preview: (item: Student | Pro) => void;
+  type: string;
 }) => {
   const [image, setImage] = useState<string>("");
   const [isChecked, setIsChecked] = useState<boolean>(false);
@@ -39,12 +41,12 @@ const StudentItem = ({
     if ("studentID" in item)
       router.push({
         pathname: "/form",
-        params: { studentToEdit: JSON.stringify({ ...item }) },
+        params: { studentToEdit: JSON.stringify({ ...item }), type },
       });
     else
       router.push({
         pathname: "/proForm",
-        params: { proToEdit: JSON.stringify({ ...item }) },
+        params: { proToEdit: JSON.stringify({ ...item }), type },
       });
   };
 

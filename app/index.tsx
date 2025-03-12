@@ -1,7 +1,5 @@
 import {
-  Alert,
   View,
-  Button,
   TextInput,
   StyleSheet,
   Text,
@@ -29,7 +27,7 @@ export default function Login() {
   const onSignInPress = async () => {
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -63,7 +61,8 @@ export default function Login() {
         router.replace("/proForm");
       } else {
         setSID!(data[0].id);
-        router.replace("/form");
+        console.log(data[0].type);
+        router.push({ pathname: "/form", params: { type: data[0].type } });
       }
       setLoading(false);
     }
