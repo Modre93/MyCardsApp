@@ -25,8 +25,14 @@ import Toast from "react-native-toast-message";
 import { grades2 } from "@/assets/data/grades";
 const placeholderImage = require("@/assets/images/placeholder.png");
 
+type Grade = {
+  key: number;
+  value: string;
+};
+
 const Form = () => {
-  const { user, sID, signOut } = useAuth();
+  const { user, sID, signOut, type } = useAuth();
+  const [schoolGrades, setSchoolGrades] = useState<Grade[]>([]);
   const [nom, setNom] = useState<string | undefined>(undefined);
   const [prenom, setPrenom] = useState<string | undefined>(undefined);
   const [grade, setGrade] = useState<string | null>(null);
@@ -45,23 +51,21 @@ const Form = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [photomodalVisible, setPhotomodalVisible] = useState(false);
   const [status, requestPermission] = ImagePicker.useCameraPermissions();
-  const { studentToEdit, type } = useLocalSearchParams();
-  const [grades, setGrades] = useState<any[]>([]);
+  const { studentToEdit } = useLocalSearchParams();
 
   useEffect(() => {
     if (!user && !sID) return;
     if (sID) {
       setIsStudent(true);
     }
-    if (type)
-      setGrades(
-        grades2[type as keyof typeof grades2].map(
-          (value: string, index: number) => ({
-            key: index,
-            value: value,
-          })
-        )
+    if (type) {
+      setSchoolGrades(
+        grades2[type as keyof typeof grades2].map((value, key) => ({
+          key,
+          value,
+        }))
       );
+    }
   }, [user, sID, type]);
 
   useEffect(() => {
@@ -310,6 +314,7 @@ const Form = () => {
       onChange,
       mode: currentMode,
       is24Hour: true,
+      maximumDate: new Date(),
     });
   };
 
@@ -359,7 +364,7 @@ const Form = () => {
           style={styles.inputField}
         />
         <SelectList
-          data={grades}
+          data={schoolGrades}
           setSelected={setGrade}
           search={false}
           save="value"

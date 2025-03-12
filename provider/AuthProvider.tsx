@@ -16,9 +16,9 @@ type AuthProps = {
   setSID: (id: string) => void;
   pID: string | null;
   setPID: (id: string) => void;
+  type?: string | null;
+  setType?: (type: string) => void;
 };
-
-const adminEmail = "admin@admin.com";
 
 export const AuthContext = createContext<Partial<AuthProps>>({});
 
@@ -34,15 +34,13 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [sID, setSID] = useState<string | null>(null);
   const [pID, setPID] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>();
+  const [type, setType] = useState<string | null>(null);
 
   useEffect(() => {
     // Listen for changes to authentication state
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session ? session.user : null);
-      setIsAdmin(
-        session ? (session.user.email === adminEmail ? true : false) : false
-      );
       setInitialized(true);
     });
     return () => {
@@ -66,7 +64,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     setSID,
     pID,
     setPID,
-    isAdmin,
+    type,
+    setType,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

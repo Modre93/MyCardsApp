@@ -20,7 +20,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
   const [code, setCode] = useState("");
-  const { setSID, setPID } = useAuth();
+  const { setSID, setPID, setType } = useAuth();
   const router = useRouter();
 
   // Sign in with email and password
@@ -56,13 +56,14 @@ export default function Login() {
         text2: "Code invalide.",
       });
     } else {
-      if (data[0].type === "association") {
+      if (data[0].type === "association" || data[0].type === "entreprise") {
         setPID!(data[0].id);
+        setType!(data[0].type);
         router.replace("/proForm");
       } else {
         setSID!(data[0].id);
-        console.log(data[0].type);
-        router.push({ pathname: "/form", params: { type: data[0].type } });
+        setType!(data[0].type);
+        router.replace("/form");
       }
       setLoading(false);
     }

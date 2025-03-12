@@ -6,7 +6,6 @@ import {
   Text,
   Modal,
   Image,
-  Switch,
 } from "react-native";
 import { useEffect, useState } from "react";
 import * as React from "react";
@@ -25,8 +24,6 @@ import {
 } from "@/utils/schools";
 import { getAllPros, getProsDataByAssociation } from "@/utils/associations";
 import Toast from "react-native-toast-message";
-
-const adminEmail = "admin@admin.com";
 
 export type Student = {
   studentID: string;
@@ -59,7 +56,7 @@ type SchoolData = {
 };
 
 const list = () => {
-  const { user } = useAuth();
+  const { user, setType } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [filteredPros, setFilteredPros] = useState<Pro[]>([]);
@@ -68,7 +65,6 @@ const list = () => {
   const [pros, setPros] = useState<Pro[]>([]);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [selected, setSelected] = useState<string>("");
   const [schoolsData, setSchoolsData] = useState<SchoolData[]>([]);
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -90,6 +86,7 @@ const list = () => {
       if (!user) return;
       const data = await getSchool(user!.id);
       if (data) {
+        setType!(data.type);
         setUserData(data);
       } else {
         Toast.show({
@@ -124,18 +121,7 @@ const list = () => {
   }, [schoolsData, userData]);
 
   const getAllData = async () => {
-    if (user!.email === adminEmail) {
-      const { data: sData, error: sError } = await getAllStudents();
-      if (sData) {
-        setStudents(sData);
-      } else {
-        console.log(sError);
-      }
-      const { data: pData, error: pError } = await getAllPros();
-      if (pData) {
-        setPros(pData);
-      } else alert(pError);
-    } else if (userData?.type === "association") {
+    if (userData?.type === "association" || userData?.type === "entreprise") {
       const { data, error } = await getProsDataByAssociation(user!.id);
       if (data) setPros(data);
       else alert(error);
@@ -153,13 +139,9 @@ const list = () => {
   };
 
   const onAddStudent = async () => {
-    if (
-      userData?.type === "association" ||
-      userData?.type === "entreprise" ||
-      showPros
-    )
+    if (userData?.type === "association" || userData?.type === "entreprise")
       router.push("/proForm");
-    else router.push({ pathname: "/form", params: { type: userData?.type } });
+    else router.push({ pathname: "/form" });
   };
 
   const onRemoveModal = (item: Student | Pro, listIndex: number) => {
@@ -229,16 +211,7 @@ const list = () => {
   };
 
   const onFilterChange = () => {
-    if (!isAdmin)
-      setFilteredStudents(students.filter((item) => item.grade === selected));
-    else {
-      if (showPros)
-        setFilteredPros(pros.filter((item) => item.association === selected));
-      else
-        setFilteredStudents(
-          students.filter((item) => item.school === selected)
-        );
-    }
+    setFilteredStudents(students.filter((item) => item.grade === selected));
   };
 
   const onChecked = (item: Student | Pro) => {
@@ -274,16 +247,12 @@ const list = () => {
       <SelectList
         data={selectlistData}
         setSelected={setSelected}
-        save={`${isAdmin ? "key" : "value"}`}
+        save={"value"}
         placeholder="Select"
         onSelect={onFilterChange}
         dropdownTextStyles={{ color: "#000" }}
         dropdownStyles={styles.dropBox}
-        boxStyles={
-          isAdmin
-            ? { ...styles.searchField }
-            : { ...styles.searchField, marginBottom: 10 }
-        }
+        boxStyles={{ ...styles.searchField, marginBottom: 10 }}
         reset={selectlistReset}
         resetFunction={resetFunc}
         search={false}
@@ -297,10 +266,8 @@ const list = () => {
                   key={item.proID}
                   item={item}
                   onRemoveImage={() => onRemoveModal(item, index)}
-                  isAdmin={isAdmin}
                   onCkecked={onChecked}
                   preview={onPriewPressed}
-                  type={userData?.type!}
                 />
               ))
             ) : (
@@ -312,10 +279,8 @@ const list = () => {
                 key={item.proID}
                 item={item}
                 onRemoveImage={() => onRemoveModal(item, index)}
-                isAdmin={isAdmin}
                 onCkecked={onChecked}
                 preview={onPriewPressed}
-                type={userData?.type!}
               />
             ))
           )
@@ -326,10 +291,8 @@ const list = () => {
                 key={item.studentID}
                 item={item}
                 onRemoveImage={() => onRemoveModal(item, index)}
-                isAdmin={isAdmin}
                 onCkecked={onChecked}
                 preview={onPriewPressed}
-                type={userData?.type!}
               />
             ))
           ) : (
@@ -341,10 +304,8 @@ const list = () => {
               key={item.studentID}
               item={item}
               onRemoveImage={() => onRemoveModal(item, index)}
-              isAdmin={isAdmin}
               onCkecked={onChecked}
               preview={onPriewPressed}
-              type={userData?.type!}
             />
           ))
         )}
@@ -375,7 +336,11 @@ const list = () => {
             <View style={{ alignItems: "center" }}>
               <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
                 CARTE
-                {previewStudent ? " SCOLAIRE" : " DE MEMBRE"}
+                {previewStudent
+                  ? " SCOLAIRE"
+                  : userData?.type === "association"
+                  ? " DE MEMBRE"
+                  : "Professionnelle"}
               </Text>
             </View>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
