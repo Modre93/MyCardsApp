@@ -36,8 +36,16 @@ const StudentItem = ({
     });
 
   const onEdit = () => {
-    if ("studentID" in item) router.push("/form");
-    else router.push("/proForm");
+    if ("studentID" in item)
+      router.push({
+        pathname: "/form",
+        params: { studentToEdit: JSON.stringify(item) },
+      });
+    else
+      router.push({
+        pathname: "/proForm",
+        params: { proToEdit: JSON.stringify(item) },
+      });
   };
 
   const onCheck = () => {
