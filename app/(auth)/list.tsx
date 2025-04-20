@@ -56,7 +56,7 @@ type SchoolData = {
 };
 
 const list = () => {
-  const { user, setType } = useAuth();
+  const { user, setType, setGrades, setFilieres } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [filteredPros, setFilteredPros] = useState<Pro[]>([]);
@@ -77,7 +77,6 @@ const list = () => {
   const [proToRemove, setProToRemove] = useState<Pro>();
   const [proToRemoveIndex, setProToRemoveIndex] = useState<number>();
   const [userData, setUserData] = useState<SchoolData>();
-  const [showPros, setShowPros] = useState<boolean>(false);
   const [selectlistData, setSelectlistData] = useState<any[]>([]);
   const [selectlistReset, setSelectlistReset] = useState<boolean>(false);
 
@@ -88,6 +87,10 @@ const list = () => {
       if (data) {
         setType!(data.type);
         setUserData(data);
+        if (data.type === "universite") {
+          setGrades!(data.grades);
+          setFilieres!(data.filieres);
+        }
       } else {
         Toast.show({
           type: "error",

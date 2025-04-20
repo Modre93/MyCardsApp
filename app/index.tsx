@@ -20,7 +20,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
   const [code, setCode] = useState("");
-  const { setSID, setPID, setType } = useAuth();
+  const { setSID, setPID, setType, setGrades, setFilieres } = useAuth();
   const router = useRouter();
 
   // Sign in with email and password
@@ -46,7 +46,7 @@ export default function Login() {
 
     const { data, error } = await supabase
       .from("etablissements")
-      .select("id, name, type")
+      .select("id, name, type, filieres, grades")
       .eq("code", code.toLocaleLowerCase());
     if (error || data.length === 0) {
       setLoading(false);
@@ -63,6 +63,8 @@ export default function Login() {
       } else {
         setSID!(data[0].id);
         setType!(data[0].type);
+        setFilieres!(data[0].filieres);
+        setGrades!(data[0].grades);
         router.replace("/form");
       }
       setLoading(false);

@@ -14,7 +14,7 @@ export const getSchools = async () => {
 export const getSchool = async (id: string) => {
   const { data, error } = await supabase
     .from("etablissements")
-    .select("id, name, type")
+    .select("id, name, type, filieres, grades")
     .eq("id", id);
   if (error) {
     console.log(error);

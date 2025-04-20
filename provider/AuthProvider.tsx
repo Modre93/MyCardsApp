@@ -18,6 +18,10 @@ type AuthProps = {
   setPID: (id: string) => void;
   type?: string | null;
   setType?: (type: string) => void;
+  filieres?: string[] | null;
+  setFilieres?: (filiere: string[]) => void;
+  grades?: string[] | null;
+  setGrades?: (grades: string[]) => void;
 };
 
 export const AuthContext = createContext<Partial<AuthProps>>({});
@@ -33,8 +37,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [initialized, setInitialized] = useState<boolean>(false);
   const [sID, setSID] = useState<string | null>(null);
   const [pID, setPID] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>();
   const [type, setType] = useState<string | null>(null);
+  const [filieres, setFilieres] = useState<string[] | null>(null);
+  const [grades, setGrades] = useState<string[] | null>(null);
 
   useEffect(() => {
     // Listen for changes to authentication state
@@ -66,6 +71,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     setPID,
     type,
     setType,
+    filieres,
+    setFilieres,
+    grades,
+    setGrades,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

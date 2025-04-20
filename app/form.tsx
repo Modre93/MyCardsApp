@@ -30,12 +30,19 @@ type Grade = {
   value: string;
 };
 
+type Filiere = {
+  key: number;
+  value: string;
+};
+
 const Form = () => {
-  const { user, sID, signOut, type } = useAuth();
+  const { user, sID, signOut, type, filieres, grades } = useAuth();
   const [schoolGrades, setSchoolGrades] = useState<Grade[]>([]);
+  const [schoolFilieres, setSchoolFilieres] = useState<Filiere[]>([]);
   const [nom, setNom] = useState<string | undefined>(undefined);
   const [prenom, setPrenom] = useState<string | undefined>(undefined);
   const [grade, setGrade] = useState<string | null>(null);
+  const [filiere, setFiliere] = useState<string | null>(null);
   const [sexe, setSexe] = useState<string | null>(null);
   const [matricule, setMatricule] = useState<string | undefined>(undefined);
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | string>();
@@ -59,12 +66,27 @@ const Form = () => {
       setIsStudent(true);
     }
     if (type) {
-      setSchoolGrades(
-        grades2[type as keyof typeof grades2].map((value, key) => ({
-          key,
-          value,
-        }))
-      );
+      if (type === "universite") {
+        setSchoolFilieres(
+          filieres!.map((value, key) => ({
+            key,
+            value,
+          }))
+        );
+        setSchoolGrades(
+          grades!.map((value, key) => ({
+            key,
+            value,
+          }))
+        );
+      } else {
+        setSchoolGrades(
+          grades2[type as keyof typeof grades2].map((value, key) => ({
+            key,
+            value,
+          }))
+        );
+      }
     }
   }, [user, sID, type]);
 
@@ -215,6 +237,7 @@ const Form = () => {
         const { error } = await supabase.from("students").insert({
           nom: nom.trim(),
           prenom: prenom?.trim(),
+          filiere: filiere,
           grade: grade,
           sexe: sexe,
           photo: filePath,
@@ -363,6 +386,21 @@ const Form = () => {
           onChangeText={setPrenom}
           style={styles.inputField}
         />
+        {type === "universite" && (
+          <SelectList
+            data={schoolFilieres}
+            setSelected={setFiliere}
+            search={false}
+            save="value"
+            placeholder="Filiere"
+            boxStyles={styles.inputField}
+            dropdownTextStyles={{ color: "#000" }}
+            dropdownStyles={styles.dropDown}
+            inputStyles={filiere ? { color: "#000" } : { color: "#656565" }}
+            reset={resetSelectList}
+            resetFunction={resetFunc}
+          />
+        )}
         <SelectList
           data={schoolGrades}
           setSelected={setGrade}
