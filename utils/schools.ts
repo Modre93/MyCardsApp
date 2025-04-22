@@ -30,6 +30,7 @@ export const getStudentsDataBySchoolID = async (id: string) => {
       `studentID,
             nom,
             prenom,
+            filiere,
             grade,
             sexe,
             date_de_naissance,

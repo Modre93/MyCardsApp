@@ -95,6 +95,7 @@ const Form = () => {
       const parsedStudentToEdit = JSON.parse(studentToEdit);
       setNom(parsedStudentToEdit.nom);
       setPrenom(parsedStudentToEdit.prenom);
+      setFiliere(parsedStudentToEdit.filiere);
       setGrade(parsedStudentToEdit.grade);
       setSexe(parsedStudentToEdit.sexe);
       setDate(new Date(parsedStudentToEdit.date_de_naissance));
